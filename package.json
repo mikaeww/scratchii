@@ -1,0 +1,29 @@
+{
+  "name": "scratchii",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check": "node tools/check.ts",
+    "test": "node --test 'tests/**/*.test.ts'"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.4",
+    "eslint": "10.11.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vite": "8.3.2"
+  },
+  "dependencies": {
+    "perfect-freehand": "1.2.3",
+    "roughjs": "4.6.6"
+  }
+}

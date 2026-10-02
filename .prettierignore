@@ -1,0 +1,5 @@
+dist/
+src-tauri/
+public/
+*.md
+package-lock.json
