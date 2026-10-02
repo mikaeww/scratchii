@@ -1,6 +1,6 @@
 # Build plan
 
-**Date:** 2026-10-02 · **Status:** active, phases are ticked off in [roadmap.md](../roadmap.md)
+**Date:** 2026-10-02 · **Status:** done 2026-10-02; deviations are noted in the phases and in ADR 0004
 
 ## Outcome
 
@@ -134,7 +134,9 @@ to 0003), check tooling: `tools/check.ts` (prettier, eslint, tsc, structure, tes
 
 ### Phase 9 — settings, language, polish
 
-- Settings dialog: default stroke, grid, autosave, sync server URL and token, language.
+- Settings dialog: grid, sync server URL and token, language. Changed during phase 9: no autosave switch
+  (switching it off could only lose work) and no default-stroke setting (the style panel's last choice is
+  remembered instead).
 - English interface by default, German selectable.
 - Accessibility pass: keyboard reachable chrome, visible focus, reduced motion.
 - `tools/render.ts` for README screenshots through headless Chromium (no window), README update.

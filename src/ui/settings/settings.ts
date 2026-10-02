@@ -1,59 +1,97 @@
-// The settings dialog. For now it holds the sync server; language and drawing defaults join in phase 9.
+// The settings dialog: language and dot grid for this device, and the sync server.
+import { readPreferences, writePreferences, type Preferences } from "../../storage/preferences.ts";
 import { SyncClient } from "../../sync/client.ts";
 import { readSyncSettings, writeSyncSettings, type SyncSettings } from "../../sync/settings.ts";
 import { text, type TextKey } from "../text.ts";
 import { showToast } from "../toast.ts";
 
-function field(label: TextKey, type: string): [HTMLLabelElement, HTMLInputElement] {
-  const wrapper = document.createElement("label");
-  wrapper.className = "field";
+export interface SettingsHooks {
+  readonly onSync: (settings: SyncSettings | null) => void;
+  readonly onGrid: (on: boolean) => void;
+  // Called after the new language is stored; the caller saves the board and reloads.
+  readonly onLanguage: () => void;
+}
+
+function label(key: TextKey): HTMLSpanElement {
   const caption = document.createElement("span");
   caption.className = "label";
-  caption.textContent = text(label);
+  caption.textContent = text(key);
+  return caption;
+}
+
+function field(key: TextKey, type: string): [HTMLLabelElement, HTMLInputElement] {
+  const wrapper = document.createElement("label");
+  wrapper.className = "field";
   const input = document.createElement("input");
   input.className = "input";
   input.type = type;
   input.autocomplete = "off";
   input.spellcheck = false;
-  wrapper.append(caption, input);
+  wrapper.append(label(key), input);
   return [wrapper, input];
 }
 
-function button(label: TextKey, className = "button"): HTMLButtonElement {
+function button(key: TextKey, className = "button"): HTMLButtonElement {
   const element = document.createElement("button");
   element.type = "button";
   element.className = className;
-  element.textContent = text(label);
+  element.textContent = text(key);
   return element;
 }
 
-async function testConnection(settings: SyncSettings, result: HTMLElement): Promise<void> {
-  result.textContent = text("settings.testing");
-  try {
-    const boards = await new SyncClient(settings.url, settings.token).list();
-    result.textContent = `${text("settings.ok")} ${boards.filter((entry) => !entry.deleted).length}`;
-  } catch (error) {
-    result.textContent = `${text("settings.failed")} ${error instanceof Error ? error.message : String(error)}`;
-  }
+function hint(key: TextKey | null): HTMLParagraphElement {
+  const element = document.createElement("p");
+  element.className = "dialog-hint";
+  if (key !== null) element.textContent = text(key);
+  return element;
 }
 
-export function mountSettings(onSync: (settings: SyncSettings | null) => void): () => void {
-  const dialog = document.createElement("dialog");
-  dialog.className = "dialog settings";
-  const title = document.createElement("h2");
-  title.className = "dialog-title";
-  title.textContent = text("settings.title");
-  const heading = document.createElement("span");
-  heading.className = "label";
-  heading.textContent = text("settings.sync");
-  const hint = document.createElement("p");
-  hint.className = "dialog-hint";
-  hint.textContent = text("settings.syncHint");
+const LANGUAGES: readonly [Preferences["language"], string][] = [
+  ["system", ""],
+  ["en", "English"],
+  ["de", "Deutsch"],
+];
+
+function generalSection(hooks: SettingsHooks): { element: HTMLElement; load: () => void } {
+  const element = document.createElement("div");
+  element.className = "settings-section";
+  const languageField = document.createElement("label");
+  languageField.className = "field";
+  const language = document.createElement("select");
+  language.className = "input";
+  for (const [value, name] of LANGUAGES)
+    language.add(new Option(name === "" ? text("settings.languageSystem") : name, value));
+  languageField.append(label("settings.language"), language);
+  const gridField = document.createElement("label");
+  gridField.className = "check";
+  const grid = document.createElement("input");
+  grid.type = "checkbox";
+  gridField.append(grid, text("settings.grid"));
+  element.append(label("settings.general"), languageField, hint("settings.languageHint"), gridField);
+  language.addEventListener("change", () => {
+    if (!writePreferences({ language: language.value as Preferences["language"] }))
+      showToast(text("settings.unsaved"), "error");
+    else hooks.onLanguage();
+  });
+  grid.addEventListener("change", () => {
+    writePreferences({ grid: grid.checked });
+    hooks.onGrid(grid.checked);
+  });
+  const load = (): void => {
+    const preferences = readPreferences();
+    language.value = preferences.language;
+    grid.checked = preferences.grid;
+  };
+  return { element, load };
+}
+
+function syncSection(hooks: SettingsHooks, done: () => void): { element: HTMLElement; load: () => void } {
+  const element = document.createElement("div");
+  element.className = "settings-section";
   const [urlField, url] = field("settings.url", "url");
   url.placeholder = "http://192.168.1.10:8787";
   const [tokenField, token] = field("settings.token", "password");
-  const result = document.createElement("p");
-  result.className = "dialog-hint";
+  const result = hint(null);
   result.setAttribute("role", "status");
   const [test, disconnect, close, save] = [
     button("settings.test"),
@@ -64,29 +102,57 @@ export function mountSettings(onSync: (settings: SyncSettings | null) => void): 
   const actions = document.createElement("div");
   actions.className = "dialog-actions";
   actions.append(test, disconnect, close, save);
-  dialog.append(title, heading, hint, urlField, tokenField, result, actions);
-  document.body.append(dialog);
+  element.append(label("settings.sync"), hint("settings.syncHint"), urlField, tokenField, result, actions);
   const current = (): SyncSettings => ({ url: url.value.trim(), token: token.value.trim() });
   const apply = (settings: SyncSettings | null): void => {
     if (!writeSyncSettings(settings)) showToast(text("settings.unsaved"), "error");
-    onSync(settings);
-    dialog.close();
+    hooks.onSync(settings);
+    done();
   };
-  test.addEventListener("click", () => void testConnection(current(), result));
+  test.addEventListener("click", () => {
+    result.textContent = text("settings.testing");
+    new SyncClient(current().url, current().token)
+      .list()
+      .then(
+        (boards) =>
+          (result.textContent = `${text("settings.ok")} ${boards.filter((entry) => !entry.deleted).length}`),
+      )
+      .catch(
+        (error: unknown) =>
+          (result.textContent = `${text("settings.failed")} ${error instanceof Error ? error.message : String(error)}`),
+      );
+  });
   save.addEventListener("click", () => {
     apply(current().url === "" ? null : current());
   });
   disconnect.addEventListener("click", () => {
     apply(null);
   });
-  close.addEventListener("click", () => {
-    dialog.close();
-  });
-  return () => {
+  close.addEventListener("click", done);
+  const load = (): void => {
     const saved = readSyncSettings();
     url.value = saved?.url ?? "";
     token.value = saved?.token ?? "";
     result.textContent = "";
+  };
+  return { element, load };
+}
+
+export function mountSettings(hooks: SettingsHooks): () => void {
+  const dialog = document.createElement("dialog");
+  dialog.className = "dialog settings";
+  const title = document.createElement("h2");
+  title.className = "dialog-title";
+  title.textContent = text("settings.title");
+  const general = generalSection(hooks);
+  const sync = syncSection(hooks, () => {
+    dialog.close();
+  });
+  dialog.append(title, general.element, sync.element);
+  document.body.append(dialog);
+  return () => {
+    general.load();
+    sync.load();
     dialog.showModal();
   };
 }

@@ -1,6 +1,6 @@
 // Headless screenshots of the real app with made-up drawings, for checks and the README. Never opens a window
 // and runs in a fresh browser profile, so it cannot touch the owner's boards.
-// Usage: node tools/render.ts OUT.png [scene] [WIDTHxHEIGHT]   scenes: empty, doodle
+// Usage: node tools/render.ts OUT.png [scene] [WIDTHxHEIGHT]   scenes: see SCENES (an unknown one lists them)
 import { chromium, type Page } from "playwright-core";
 import { createServer } from "vite";
 
@@ -65,10 +65,16 @@ async function tool(page: Page, key: string): Promise<void> {
   await page.keyboard.press(key);
 }
 
+// Swatches by position, so scenes work in every language: section 0 is ink, 1 is fill; the order is the
+// palette order of src/ui/style-panel.ts.
+async function swatch(page: Page, section: 0 | 1, index: number): Promise<void> {
+  await page.locator(".style-panel .swatches").nth(section).locator("button").nth(index).click();
+}
+
 async function board(page: Page): Promise<void> {
   await tool(page, "r");
   await drag(page, [260, 180], [520, 330]);
-  await page.click('[aria-label="Coral"] >> nth=1');
+  await swatch(page, 1, 2);
   await tool(page, "o");
   await drag(page, [600, 190], [800, 330]);
   await tool(page, "a");
@@ -77,7 +83,7 @@ async function board(page: Page): Promise<void> {
   await type(page, [960, 260], "Buy more yellow paint and call the print shop");
   await tool(page, "t");
   await type(page, [300, 450], "Scratchii plan");
-  await page.click('[aria-label="Violet"] >> nth=0');
+  await swatch(page, 0, 3);
   await tool(page, "p");
   await stroke(page, wave(300, 510, 260));
 }
@@ -115,17 +121,27 @@ async function recognise(page: Page): Promise<void> {
   await tool(page, "t");
   await type(page, [600, 430], "Highlight this line");
   await tool(page, "m");
-  await page.click('[aria-label="Coral"] >> nth=0');
+  await swatch(page, 0, 2);
   await stroke(page, [
     [590, 432],
     [700, 430],
     [760, 433],
   ]);
-  await page.click('[aria-label="Yellow"] >> nth=0');
+  await swatch(page, 0, 5);
   await stroke(page, wave(260, 560, 300));
 }
 
+// Device preferences some scenes start with (see src/storage/preferences.ts).
+const PREFERENCES: Readonly<Record<string, object>> = {
+  german: { language: "de", grid: true },
+  settings: { language: "de", grid: true },
+};
+
 const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
+  german: board,
+  settings: async (page) => {
+    await page.click(".sync-status");
+  },
   recognise,
   marks,
   menu: async (page) => {
@@ -191,6 +207,12 @@ async function main(): Promise<void> {
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   try {
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
+    const preferences = PREFERENCES[scene];
+    if (preferences !== undefined) {
+      await page.addInitScript((value) => {
+        localStorage.setItem("scratchii.preferences", value);
+      }, JSON.stringify(preferences));
+    }
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => {

@@ -15,6 +15,7 @@ import { createBoard } from "./model/board.ts";
 import { readInk } from "./render/ink.ts";
 import { lineBoxes } from "./render/marks.ts";
 import { attachDrop } from "./editor/drop.ts";
+import { rememberStyle } from "./storage/preferences.ts";
 import { openLastBoard } from "./storage/session.ts";
 import { openBoards } from "./storage/local.ts";
 import { boardPanel } from "./ui/board-panel.ts";
@@ -25,7 +26,7 @@ import { mountOcr } from "./ui/menus/ocr-dialog.ts";
 import { mountStage } from "./ui/stage.ts";
 import { stylePanel } from "./ui/style-panel.ts";
 import { mountTextEditor } from "./ui/text-editor.ts";
-import { text } from "./ui/text.ts";
+import { activeLanguage, text } from "./ui/text.ts";
 import { showToast } from "./ui/toast.ts";
 import { mountChrome } from "./ui/toolbar.ts";
 
@@ -65,6 +66,8 @@ async function start(): Promise<void> {
     showToast(text("storage.unreadable"), "error");
   }
   const editor = new Editor(opened?.board ?? createBoard(text("board.untitled")));
+  rememberStyle(editor);
+  document.documentElement.lang = activeLanguage();
   const chrome = required("#chrome", HTMLDivElement);
   const editing = mountTextEditor(chrome, editor);
   const tools = createTools(editor, editing);
@@ -73,9 +76,9 @@ async function start(): Promise<void> {
       editing.edit(newText(editor, world), true);
   });
   const ink = readInk(document.documentElement);
-  mountStage(canvas, editor, ink, tools);
+  const stage = mountStage(canvas, editor, ink, tools);
   mountContextMenu(canvas, editor, ink, { pad: mountMarkPad(editor, ink), toText: mountOcr(editor) });
-  const actions = boardActions(editor, ink, database);
+  const actions = boardActions(editor, ink, database, stage);
   mountChrome(chrome, editor, canvas, boardPanel(editor, actions));
   chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {

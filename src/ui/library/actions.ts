@@ -12,6 +12,7 @@ import { Session } from "../../storage/session.ts";
 import { readSyncSettings } from "../../sync/settings.ts";
 import { startSync, type SyncLoop, type SyncStatus } from "../../sync/loop.ts";
 import { mountSettings } from "../settings/settings.ts";
+import type { Stage } from "../stage.ts";
 import type { FileActions } from "../board-panel.ts";
 import { text, type TextKey } from "../text.ts";
 import { showToast } from "../toast.ts";
@@ -105,7 +106,30 @@ function libraryOpener(
   });
 }
 
-export function boardActions(editor: Editor, ink: Ink, database: IDBDatabase | null): FileActions {
+function settingsOpener(session: Session | null, sync: SyncLoop | null, stage: Stage): () => void {
+  return mountSettings({
+    onSync: (settings) => {
+      if (sync === null) showToast(text("storage.unavailable"), "error");
+      else sync.restart(settings);
+    },
+    onGrid: (on) => {
+      stage.setGrid(on);
+    },
+    onLanguage: () => {
+      // Save the open board before the reload that switches the language.
+      void (session?.flush() ?? Promise.resolve()).then(() => {
+        location.reload();
+      });
+    },
+  });
+}
+
+export function boardActions(
+  editor: Editor,
+  ink: Ink,
+  database: IDBDatabase | null,
+  stage: Stage,
+): FileActions {
   const session =
     database === null
       ? null
@@ -145,10 +169,7 @@ export function boardActions(editor: Editor, ink: Ink, database: IDBDatabase | n
     exportSvg: exporting(() => exportSvg(editor.board.items, ink), ".svg"),
     exportPdf: exporting(() => exportPdf(editor.board.items, ink), ".pdf"),
     library: libraryOpener(editor, database, open, create, sync),
-    settings: mountSettings((settings) => {
-      if (sync === null) showToast(text("storage.unavailable"), "error");
-      else sync.restart(settings);
-    }),
+    settings: settingsOpener(session, sync, stage),
     onSyncStatus: (listener: (status: SyncStatus) => void) => {
       if (sync === null) listener({ kind: "off" });
       else sync.onStatus(listener);

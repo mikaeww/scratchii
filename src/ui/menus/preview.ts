@@ -18,6 +18,8 @@ export function markFor(preset: PresetShape, target: string, color: Color, size:
 
 export function markPreview(preset: PresetShape, color: Color, ink: Ink): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
+  // Decorative: the button around it carries the name.
+  canvas.setAttribute("aria-hidden", "true");
   const ratio = window.devicePixelRatio;
   canvas.width = WIDTH * ratio;
   canvas.height = HEIGHT * ratio;

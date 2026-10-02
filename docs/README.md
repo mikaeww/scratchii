@@ -9,4 +9,4 @@
 | [architecture/overview.md](architecture/overview.md) | Modules and how data flows between them |
 | [plans/2026-10-02-buildplan.md](plans/2026-10-02-buildplan.md) | The build plan all phases follow |
 | [decisions/](decisions/) | Architecture decision records, `0000-template.md` first |
-| [handoffs/](handoffs/) | Dated session handoffs |
+| [handoffs/](handoffs/) | Dated session handoffs, newest: [2026-10-02-build.md](handoffs/2026-10-02-build.md) |

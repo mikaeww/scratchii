@@ -277,7 +277,6 @@
 .board-title:focus {
   background: var(--cream);
   border-color: var(--ink);
-  outline: 0;
 }
 
 .menu.file-menu {

@@ -74,6 +74,32 @@ export interface Scene {
   readonly width: number;
   readonly height: number;
   readonly ratio: number;
+  // Only the live canvas shows the grid; exports and previews leave it out.
+  readonly grid?: boolean;
+}
+
+// World units between dots; at small zooms every fourth dot is enough to keep the canvas calm.
+const GRID = 28;
+
+function drawGrid(context: CanvasRenderingContext2D, scene: Scene, ink: Ink): void {
+  const { view } = scene;
+  const step = view.zoom < 0.5 ? GRID * 4 : GRID;
+  const radius = 1.4 / view.zoom;
+  const left = Math.floor(view.x / step) * step;
+  const top = Math.floor(view.y / step) * step;
+  const right = view.x + scene.width / view.zoom;
+  const bottom = view.y + scene.height / view.zoom;
+  context.fillStyle = ink.colors.ink;
+  context.globalAlpha = 0.22;
+  context.beginPath();
+  for (let x = left; x <= right; x += step) {
+    for (let y = top; y <= bottom; y += step) {
+      context.moveTo(x + radius, y);
+      context.arc(x, y, radius, 0, Math.PI * 2);
+    }
+  }
+  context.fill();
+  context.globalAlpha = 1;
 }
 
 // onImage is called when a picture that was still decoding becomes ready, so the caller can draw again.
@@ -95,5 +121,6 @@ export function drawScene(
     -view.x * view.zoom * ratio,
     -view.y * view.zoom * ratio,
   );
+  if (scene.grid === true) drawGrid(context, scene, ink);
   for (const step of paintOrder(scene.items)) drawStep(context, step, ink, onImage);
 }

@@ -19,3 +19,11 @@
 | [verification/sync.md](verification/sync.md) | Sync merge, server, client |
 | [verification/handwriting.md](verification/handwriting.md) | Handwriting to text (experimental) |
 | [verification/annotate.md](verification/annotate.md) | Marks: presets, layout on text lines, own marks, deletion with their text |
+
+## Accessibility check
+
+2026-10-02, headless Chrome on the running app: every visible button, input, select and canvas has an
+accessible name (two misses found and fixed: the own-mark drawing area, and decorative preview canvases now
+hidden from assistive tech); Tab reaches 32 controls of the chrome and each shows a focus outline (the board
+title had suppressed it, fixed). Dialogs are native `<dialog>` elements, menus move with arrow keys and close
+with Escape, and reduced motion sets all transition durations to 0. Not checked: a real screen reader.

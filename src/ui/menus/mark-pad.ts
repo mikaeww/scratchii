@@ -96,6 +96,7 @@ export function mountMarkPad(editor: Editor, ink: Ink): (target: TextItem) => vo
   dialog.className = "dialog";
   const canvas = document.createElement("canvas");
   canvas.className = "pad";
+  canvas.setAttribute("aria-label", text("pad.area"));
   const behind = document.createElement("input");
   behind.type = "checkbox";
   const [clear, cancel, save] = layout(dialog, canvas, behind);
