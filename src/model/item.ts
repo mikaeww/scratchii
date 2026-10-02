@@ -30,6 +30,8 @@ export interface StrokeItem extends ItemBase {
   readonly points: readonly StrokePoint[];
   // False for mice and touch without pressure; the renderer then simulates pressure from speed.
   readonly pressure: boolean;
+  // A marker is wide, flat and translucent.
+  readonly tip: "pen" | "marker";
 }
 
 export interface ShapeItem extends ItemBase {

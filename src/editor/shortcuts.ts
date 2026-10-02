@@ -14,6 +14,7 @@ const TOOL_KEYS: Readonly<Record<string, ToolName>> = {
   v: "select",
   h: "hand",
   p: "pen",
+  m: "marker",
   r: "rect",
   o: "ellipse",
   l: "line",

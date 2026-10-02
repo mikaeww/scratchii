@@ -1,6 +1,7 @@
 // Hand-drawn interface icons as SVG path data on a 24 unit grid, stroked in ink. Not here: canvas drawings.
 
 const PATHS = {
+  marker: "M14.5 4.5l5 5-7.8 7.8-5-5zM6.7 12.3l-2.2 5.2 2 2 5.2-2.2M4.5 20h6",
   select: "M5.5 3.5l13 7.2-5.8 1.6 3.4 6.2-2.6 1.4-3.4-6.2-4.2 4.1z",
   rect: "M4.5 6.5c5-.6 10-.5 15 0 .5 3.7.4 7.4 0 11-5 .6-10 .5-15 0-.4-3.6-.4-7.3 0-11z",
   ellipse: "M12 5.5c4.6 0 8 2.9 8 6.5s-3.4 6.5-8 6.5-8-2.9-8-6.5 3.4-6.5 8-6.5z",

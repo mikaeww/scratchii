@@ -2,7 +2,7 @@
 // and lines in 45° steps.
 import { boxFromPoints } from "../../geometry/box.ts";
 import { createItem, type Item, type LineItem, type ShapeItem } from "../../model/item.ts";
-import type { Editor } from "../editor.ts";
+import type { Editor, Style } from "../editor.ts";
 import type { Vec } from "../viewport.ts";
 import type { PointerSample, Tool } from "./tool.ts";
 
@@ -23,23 +23,16 @@ function constrain(start: Vec, end: Vec, kind: ShapeKind): Vec {
   return [start[0] + Math.sign(dx || 1) * side, start[1] + Math.sign(dy || 1) * side];
 }
 
-function build(editor: Editor, kind: ShapeKind, start: Vec, end: Vec): Item {
-  const { color, size, fill } = editor.style;
+export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): Item {
+  const { color, size, fill } = style;
   if (kind === "line" || kind === "arrow") {
-    return createItem<LineItem>({
-      type: kind,
-      x: start[0],
-      y: start[1],
-      color,
-      size,
-      points: [
-        [0, 0],
-        [end[0] - start[0], end[1] - start[1]],
-      ],
-    });
+    const points: LineItem["points"] = [
+      [0, 0],
+      [end[0] - start[0], end[1] - start[1]],
+    ];
+    return createItem<LineItem>({ type: kind, x: start[0], y: start[1], color, size, points });
   }
-  const box = boxFromPoints(start, end);
-  return createItem<ShapeItem>({ type: kind, ...box, color, size, fill });
+  return createItem<ShapeItem>({ type: kind, ...boxFromPoints(start, end), color, size, fill });
 }
 
 export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
@@ -49,7 +42,7 @@ export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
     if (start === null) return;
     const end = sample.shift ? constrain(start, sample.world, kind) : sample.world;
     // Keep id and seed while dragging, so the wobble does not flicker.
-    const next = build(editor, kind, start, end);
+    const next = shapeItem(editor.style, kind, start, end);
     draft = draft === null ? next : { ...next, id: draft.id, seed: draft.seed };
     editor.setDraft([draft]);
   };

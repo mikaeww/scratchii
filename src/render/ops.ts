@@ -1,6 +1,6 @@
 // Every item becomes a short list of draw operations in item-local coordinates. The canvas renderer and the
 // SVG export both draw from this list, so they cannot drift apart. Not here: the drawing itself.
-import { strokePath } from "../geometry/freehand.ts";
+import { markerPath, strokePath } from "../geometry/freehand.ts";
 import { roughBox, roughLine, type RoughPaths } from "../geometry/rough.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING, SHAPE_WIDTH } from "../geometry/widths.ts";
 import type { Color, Item, NoteItem } from "../model/item.ts";
@@ -30,6 +30,8 @@ export interface TextOp {
 export type DrawOp = PathOp | TextOp;
 
 const cache = new WeakMap<Item, readonly DrawOp[]>();
+// Highlighter ink lets what is underneath show through; marks behind text use the same value.
+export const MARKER_OPACITY = 0.55;
 
 function fillOp(d: string, fill: Color): PathOp {
   return { kind: "path", d, fill, stroke: null, width: 0, shadow: true, opacity: 1 };
@@ -69,8 +71,21 @@ function noteOps(item: NoteItem): DrawOp[] {
 function build(item: Item): readonly DrawOp[] {
   switch (item.type) {
     case "stroke": {
-      const d = strokePath(item.points, item.size, item.pressure);
-      return [{ kind: "path", d, fill: item.color, stroke: null, width: 0, shadow: false, opacity: 1 }];
+      const marker = item.tip === "marker";
+      const d = marker
+        ? markerPath(item.points, item.size)
+        : strokePath(item.points, item.size, item.pressure);
+      return [
+        {
+          kind: "path",
+          d,
+          fill: item.color,
+          stroke: null,
+          width: 0,
+          shadow: false,
+          opacity: marker ? MARKER_OPACITY : 1,
+        },
+      ];
     }
     case "rect":
     case "ellipse": {

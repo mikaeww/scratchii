@@ -8,13 +8,36 @@ const CHROME = process.env.CHROME ?? "/usr/bin/google-chrome-stable";
 
 type Point = readonly [number, number];
 
-async function stroke(page: Page, points: readonly Point[]): Promise<void> {
+// holdMs keeps the button down at the end, which makes the pen snap a recognised shape.
+async function stroke(page: Page, points: readonly Point[], holdMs = 0): Promise<void> {
   const [first, ...rest] = points;
   if (first === undefined) return;
   await page.mouse.move(...first);
   await page.mouse.down();
   for (const point of rest) await page.mouse.move(...point, { steps: 3 });
+  if (holdMs > 0) await page.waitForTimeout(holdMs);
   await page.mouse.up();
+}
+
+function wobblyBox(x: number, y: number, width: number, height: number): Point[] {
+  const corners: Point[] = [
+    [x, y],
+    [x + width, y + 4],
+    [x + width - 3, y + height],
+    [x + 2, y + height - 3],
+    [x + 4, y + 6],
+  ];
+  return corners.slice(1).flatMap((corner, i) => {
+    const from = corners[i] ?? corner;
+    return Array.from(
+      { length: 8 },
+      (_, k) =>
+        [
+          from[0] + ((corner[0] - from[0]) * k) / 8 + Math.sin(k) * 2,
+          from[1] + ((corner[1] - from[1]) * k) / 8 + Math.cos(k) * 2,
+        ] as const,
+    );
+  });
 }
 
 function wave(x: number, y: number, width: number): Point[] {
@@ -72,7 +95,38 @@ async function marks(page: Page): Promise<void> {
   await page.mouse.click(1100, 700);
 }
 
+async function recognise(page: Page): Promise<void> {
+  await tool(page, "p");
+  await stroke(page, wobblyBox(260, 180, 220, 130), 700);
+  await stroke(page, loop(700, 250, 70), 700);
+  await stroke(
+    page,
+    [
+      [880, 250],
+      [1000, 240],
+      [1080, 245],
+      [1050, 220],
+      [1080, 245],
+      [1052, 270],
+    ],
+    700,
+  );
+  await stroke(page, wave(260, 420, 260));
+  await tool(page, "t");
+  await type(page, [600, 430], "Highlight this line");
+  await tool(page, "m");
+  await page.click('[aria-label="Coral"] >> nth=0');
+  await stroke(page, [
+    [590, 432],
+    [700, 430],
+    [760, 433],
+  ]);
+  await page.click('[aria-label="Yellow"] >> nth=0');
+  await stroke(page, wave(260, 560, 300));
+}
+
 const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
+  recognise,
   marks,
   menu: async (page) => {
     await tool(page, "t");

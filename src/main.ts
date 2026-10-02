@@ -5,12 +5,14 @@ import { Editor } from "./editor/editor.ts";
 import { attachInput, type Tools } from "./editor/input.ts";
 import { createEraser } from "./editor/tools/eraser.ts";
 import { createHand } from "./editor/tools/hand.ts";
+import { createMarker } from "./editor/tools/marker.ts";
 import { createPen } from "./editor/tools/pen.ts";
 import { createSelect } from "./editor/tools/select.ts";
 import { createShapeTool } from "./editor/tools/shape.ts";
 import { createTextTool, editAt, newText, type TextEditing } from "./editor/tools/text.ts";
 import { createBoard } from "./model/board.ts";
 import { readInk } from "./render/ink.ts";
+import { lineBoxes } from "./render/marks.ts";
 import { keepSaved, openLastBoard } from "./storage/autosave.ts";
 import { openBoards } from "./storage/local.ts";
 import { mountContextMenu } from "./ui/menus/context-menu.ts";
@@ -32,7 +34,8 @@ function createTools(editor: Editor, editing: TextEditing): Tools {
   return {
     select: createSelect(editor),
     hand: createHand(editor),
-    pen: createPen(editor),
+    pen: createPen(editor, () => true),
+    marker: createMarker(editor, lineBoxes),
     rect: createShapeTool(editor, "rect"),
     ellipse: createShapeTool(editor, "ellipse"),
     line: createShapeTool(editor, "line"),

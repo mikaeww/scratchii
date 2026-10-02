@@ -152,11 +152,12 @@ type Reader = (fields: Fields, path: string) => Omit<Item, keyof ItemBase>;
 
 const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> = {
   stroke: [
-    ["points", "pressure"],
+    ["points", "pressure", "tip"],
     (f, p) => ({
       type: "stroke",
       points: list(f.points, `${p}.points`, strokePoint),
       pressure: flag(f.pressure, `${p}.pressure`),
+      tip: oneOf(f.tip, `${p}.tip`, ["pen", "marker"] as const),
     }),
   ],
   rect: [["width", "height", "fill"], (f, p) => shape("rect", f, p)],

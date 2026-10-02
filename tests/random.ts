@@ -60,6 +60,7 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
         return [between(random, -500, 500), between(random, -500, 500), random()] as const;
       }),
       pressure: random() < 0.5,
+      tip: random() < 0.5 ? "pen" : "marker",
     }),
   rect: (random) => shape(random, "rect"),
   ellipse: (random) => shape(random, "ellipse"),

@@ -6,10 +6,8 @@ import type { Box } from "../geometry/box.ts";
 import { LINE_HEIGHT, PEN_WIDTH } from "../geometry/widths.ts";
 import type { MarkItem, TextItem } from "../model/item.ts";
 import { lineWidth } from "./measure.ts";
-import type { PathOp } from "./ops.ts";
+import { MARKER_OPACITY, type PathOp } from "./ops.ts";
 
-// Highlighter ink lets the text show through.
-const BEHIND_OPACITY = 0.55;
 const MARK_THINNING = 0.2;
 
 const cache = new WeakMap<MarkItem, { readonly target: TextItem; readonly ops: readonly PathOp[] }>();
@@ -55,7 +53,7 @@ function build(mark: MarkItem, target: TextItem): PathOp[] {
     stroke: null,
     width: 0,
     shadow: false,
-    opacity: mark.layer === "behind" ? BEHIND_OPACITY : 1,
+    opacity: mark.layer === "behind" ? MARKER_OPACITY : 1,
   }));
 }
 

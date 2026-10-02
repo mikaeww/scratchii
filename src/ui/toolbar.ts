@@ -46,6 +46,7 @@ const TOOLS: readonly ToolName[] = [
   "select",
   "hand",
   "pen",
+  "marker",
   "rect",
   "ellipse",
   "arrow",
@@ -55,7 +56,7 @@ const TOOLS: readonly ToolName[] = [
   "eraser",
 ];
 // Groups in the bar: moving around, drawing, shapes, words, removing.
-const DIVIDE_AFTER = new Set<ToolName>(["hand", "pen", "line", "note"]);
+const DIVIDE_AFTER = new Set<ToolName>(["hand", "marker", "line", "note"]);
 
 function toolPanel(editor: Editor): HTMLElement {
   const element = panel("top");

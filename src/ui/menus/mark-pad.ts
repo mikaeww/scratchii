@@ -51,6 +51,7 @@ function strokeItem(points: Points, editor: Editor, behind: boolean): StrokeItem
     size: "m",
     points: points.map(([x, y]) => [x, y, 0.5]),
     pressure: false,
+    tip: "pen",
   });
 }
 

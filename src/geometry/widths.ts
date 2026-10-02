@@ -2,6 +2,7 @@
 import type { Item, Size } from "../model/item.ts";
 
 export const PEN_WIDTH: Readonly<Record<Size, number>> = { s: 4, m: 7, l: 12 };
+export const MARKER_WIDTH: Readonly<Record<Size, number>> = { s: 14, m: 22, l: 32 };
 export const SHAPE_WIDTH: Readonly<Record<Size, number>> = { s: 2.5, m: 4, l: 6 };
 export const FONT_SIZE: Readonly<Record<Size, number>> = { s: 20, m: 28, l: 40 };
 export const NOTE_FONT_SIZE: Readonly<Record<Size, number>> = { s: 18, m: 22, l: 28 };
@@ -12,7 +13,7 @@ export const NOTE_PADDING = 16;
 export function inkReach(item: Item): number {
   switch (item.type) {
     case "stroke":
-      return PEN_WIDTH[item.size] / 2;
+      return (item.tip === "marker" ? MARKER_WIDTH : PEN_WIDTH)[item.size] / 2;
     case "text":
       return 0;
     default:

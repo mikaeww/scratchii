@@ -2,7 +2,7 @@
 // Not here: colour or drawing; the outline is the same for canvas and SVG export.
 import { getStroke } from "perfect-freehand";
 import type { Size, StrokePoint } from "../model/item.ts";
-import { PEN_WIDTH } from "./widths.ts";
+import { MARKER_WIDTH, PEN_WIDTH } from "./widths.ts";
 
 function average(a: number, b: number): number {
   return (a + b) / 2;
@@ -53,4 +53,9 @@ export function freehandPath(points: readonly (readonly number[])[], options: Fr
 
 export function strokePath(points: readonly StrokePoint[], size: Size, pressure: boolean): string {
   return freehandPath(points, { width: PEN_WIDTH[size], pressure, thinning: pressure ? 0.6 : 0.45 });
+}
+
+// A felt highlighter: wide and even, pressure does not thin it.
+export function markerPath(points: readonly StrokePoint[], size: Size): string {
+  return freehandPath(points, { width: MARKER_WIDTH[size], pressure: false, thinning: 0 });
 }

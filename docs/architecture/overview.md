@@ -7,6 +7,7 @@ src/editor/           Editor (session state, undo), viewport maths, input, tools
 src/geometry/         item shapes as SVG path data (freehand outline, later rough shapes)
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
 src/annotate/          marks: built-in presets, layout on text lines, own marks
+src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
 src/storage/          IndexedDB boards, autosave and the last open board
 src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text
 ```
@@ -39,6 +40,14 @@ them, so marks follow every move, resize and edit of their text. The strokes liv
 preset, so a board with own marks looks the same in every browser. Deleting a text deletes its marks in the
 same commit (`Editor.commit`). The right-click menu (`ui/menus/context-menu.ts`) applies presets; the pad
 (`ui/menus/mark-pad.ts`) records own ones.
+
+## Recognition
+
+The pen starts a 500 ms timer whenever it comes to rest; if it is still resting when the timer fires, the
+stroke so far goes to `recognize/shapes.ts` and, if it is a line, arrow, box or ellipse, the draft becomes that
+shape and is committed on lift. The marker tool hands its finished stroke and the measured lines of every text
+in the scene to `recognize/highlight.ts`; a hit becomes a mark behind the text, otherwise the stroke stays a
+translucent marker stroke.
 
 ## Versions
 

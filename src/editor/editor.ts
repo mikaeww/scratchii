@@ -7,7 +7,7 @@ import { History } from "./history.ts";
 import type { Viewport } from "./viewport.ts";
 
 export type ToolName =
-  "select" | "hand" | "pen" | "rect" | "ellipse" | "line" | "arrow" | "text" | "note" | "eraser";
+  "select" | "hand" | "pen" | "marker" | "rect" | "ellipse" | "line" | "arrow" | "text" | "note" | "eraser";
 export type Change = "board" | "items" | "view" | "tool" | "style" | "draft" | "selection";
 
 export interface Style {
