@@ -1,6 +1,7 @@
 // The top-left panel: the board's title (editable), the library and the file menu.
 import type { Editor } from "../editor/editor.ts";
 import { icon } from "./icons.ts";
+import { attachMenuKeys } from "./menus/menu-keys.ts";
 import { text, type TextKey } from "./text.ts";
 
 export interface FileActions {
@@ -94,11 +95,9 @@ export function boardPanel(editor: Editor, actions: FileActions): HTMLElement {
     },
     true,
   );
-  menu.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      menu.hidden = true;
-      file.focus();
-    }
+  attachMenuKeys(menu, () => {
+    menu.hidden = true;
+    file.focus();
   });
   panel.append(mark, titleInput(editor), iconButton("library", "board.library", actions.library), file, menu);
   return panel;

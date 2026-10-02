@@ -11,7 +11,7 @@ the real check is noted in its commit, and its claims in `verification/` have me
 | 3 | Annotations and underline presets, own presets | done |
 | 4 | Shape snapping and text highlighter | done |
 | 5 | `.scratchii` files, PNG/SVG/PDF export, library | done |
-| 6 | Desktop app with Tauri, install script, packages | open |
-| 7 | Self-hosted sync server and client | open |
+| 6 | Desktop app with Tauri, install script, packages | done |
+| 7 | Self-hosted sync server and client | in progress |
 | 8 | Handwriting to text (experimental) | open |
 | 9 | Settings, German, accessibility pass, screenshots | open |

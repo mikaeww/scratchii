@@ -94,9 +94,7 @@ export function boardActions(editor: Editor, ink: Ink, database: IDBDatabase | n
   const openFile = fileOpener(database, open);
   const exporting = (make: () => Promise<Blob>, extension: string) => (): void => {
     make()
-      .then((blob) => {
-        downloadFile(fileName(editor.board.title, extension), blob);
-      })
+      .then((blob) => downloadFile(fileName(editor.board.title, extension), blob))
       .catch(report("file.exportFailed"));
   };
   return {
@@ -111,7 +109,7 @@ export function boardActions(editor: Editor, ink: Ink, database: IDBDatabase | n
     },
     save: () => {
       const blob = new Blob([serialiseFile(editor.board)], { type: "application/json" });
-      downloadFile(fileName(editor.board.title, FILE_EXTENSION), blob);
+      downloadFile(fileName(editor.board.title, FILE_EXTENSION), blob).catch(report("file.exportFailed"));
     },
     exportPng: exporting(() => exportPng(editor.board.items, ink), ".png"),
     exportSvg: exporting(() => exportSvg(editor.board.items, ink), ".svg"),

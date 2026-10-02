@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Scratchii
+GenericName=Scratchpad
+Comment=Hand-drawn scratchpad for notes and sketches
+Exec=scratchii
+Icon=scratchii
+Terminal=false
+Categories=Office;Graphics;
+Keywords=whiteboard;notes;sketch;draw;
+StartupWMClass=scratchii

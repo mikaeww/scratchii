@@ -59,6 +59,15 @@ PDF as that picture in JPEG inside a one-page PDF (`render/export/pdf.ts`), SVG 
 handwriting font embedded. `storage/session.ts` saves 400 ms after a change and flushes before switching
 boards; thumbnails are rendered three seconds after the last save of each board.
 
+## Desktop
+
+`src-tauri/` wraps the built web app (`dist/`) in a Tauri 2 window. It adds only the native save dialog and
+the file write behind it (capability `dialog:allow-save`, `fs:allow-write-file`); `storage/disk.ts` uses it
+when `__TAURI_INTERNALS__` exists and falls back to a browser download otherwise. Boards stay in IndexedDB,
+which WebKitGTK keeps under `~/.local/share/dev.mikaeww.scratchii/` (ADR 0004). File drops are handled by the
+page, so the window disables Tauri's own drag and drop. The icon in `src-tauri/icons/` is a placeholder
+generated from `assets/icon-placeholder.svg` until the real one exists.
+
 ## Versions
 
 Every change makes a new item object with `version + 1` and a fresh `nonce`. Undo and redo do not hand back old

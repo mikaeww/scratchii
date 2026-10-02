@@ -1,0 +1,36 @@
+[package]
+name = "scratchii"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "Desktop shell for Scratchii, a hand-drawn Neo Brutalism scratchpad"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "=2.7.1", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.1", features = [] }
+tauri-plugin-dialog = "=2.8.1"
+tauri-plugin-fs = "=2.6.0"
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+too_many_lines = "deny"
+too_many_arguments = "deny"
+cast_possible_truncation = "deny"
+cast_sign_loss = "deny"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

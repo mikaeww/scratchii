@@ -11,10 +11,13 @@
     "dev": "vite",
     "build": "vite build",
     "check": "node tools/check.ts",
-    "test": "node --test 'tests/**/*.test.ts'"
+    "test": "node --test 'tests/**/*.test.ts'",
+    "desktop": "tauri dev",
+    "desktop:build": "tauri build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@tauri-apps/cli": "2.12.1",
     "@types/node": "26.6.4",
     "eslint": "10.11.0",
     "playwright-core": "1.63.0",
@@ -24,6 +27,9 @@
     "vite": "8.3.2"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.12.1",
+    "@tauri-apps/plugin-dialog": "2.8.1",
+    "@tauri-apps/plugin-fs": "2.6.0",
     "perfect-freehand": "1.2.3",
     "roughjs": "4.6.6"
   }

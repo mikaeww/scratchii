@@ -8,6 +8,7 @@ import { itemAt } from "../../geometry/hit.ts";
 import { updateItem, type TextItem } from "../../model/item.ts";
 import type { Ink } from "../../render/ink.ts";
 import { text, type TextKey } from "../text.ts";
+import { attachMenuKeys } from "./menu-keys.ts";
 import { markFor, markPreview } from "./preview.ts";
 
 const REACH = 6;
@@ -118,12 +119,6 @@ function itemEntries(editor: Editor, done: () => void): HTMLElement[] {
   ];
 }
 
-function moveFocus(menu: HTMLElement, step: number): void {
-  const items = [...menu.querySelectorAll<HTMLElement>("[role=menuitem]")];
-  const index = items.indexOf(document.activeElement as HTMLElement);
-  items[(index + step + items.length) % items.length]?.focus();
-}
-
 export function mountContextMenu(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, pad: OpenPad): void {
   const menu = document.createElement("div");
   menu.className = "menu";
@@ -168,12 +163,6 @@ export function mountContextMenu(canvas: HTMLCanvasElement, editor: Editor, ink:
     },
     true,
   );
-  menu.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") close();
-    else if (event.key === "ArrowDown" || event.key === "ArrowRight") moveFocus(menu, 1);
-    else if (event.key === "ArrowUp" || event.key === "ArrowLeft") moveFocus(menu, -1);
-    else return;
-    event.preventDefault();
-  });
+  attachMenuKeys(menu, close);
   window.addEventListener("blur", close);
 }

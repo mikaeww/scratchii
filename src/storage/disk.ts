@@ -1,4 +1,4 @@
-// Files the user picks or downloads, through the browser. The desktop shell swaps in native dialogs later.
+// Files the user picks or saves: a browser download, or the native save dialog inside the desktop app.
 
 // Characters that are unsafe or awkward in file names on Linux, Windows or macOS; control characters too.
 const UNSAFE = /[\\/:*?"<>|]+/g;
@@ -9,7 +9,17 @@ export function fileName(title: string, extension: string): string {
   return `${base === "" ? "board" : base}${extension}`;
 }
 
-export function downloadFile(name: string, blob: Blob): void {
+// The desktop shell (Tauri) injects this global; a browser never has it.
+export function isDesktop(): boolean {
+  return "__TAURI_INTERNALS__" in window;
+}
+
+export async function downloadFile(name: string, blob: Blob): Promise<void> {
+  if (isDesktop()) {
+    const { saveWithDialog } = await import("./desktop.ts");
+    await saveWithDialog(name, blob);
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
