@@ -1,0 +1,124 @@
+/* Design tokens (ADR 0002): the only place for colours, outlines, shadows, radii, spacing, type and motion.
+   The canvas palette is read from here too (src/render/ink.ts). */
+
+@font-face {
+  font-family: "Shantell Sans";
+  src: url("/fonts/shantell-sans.woff2") format("woff2");
+  font-weight: 300 800;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/space-grotesk.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Palette, shared by interface and canvas. */
+  --ink: #111111;
+  --paper: #ffffff;
+  --cream: #fff3d6;
+  --coral: #ff6b6b;
+  --violet: #9b7bff;
+  --teal: #2ec4b6;
+  --sun: #ffd23f;
+  --pink: #ff9ecd;
+  --orange: #ff9f1c;
+  --sky: #4cc9f0;
+  --canvas: #ffffff;
+  /* World units: the offset of the hard shadow under drawn shapes. */
+  --canvas-shadow: 4;
+
+  /* Outlines and hard shadows. */
+  --line: 2px;
+  --line-strong: 3px;
+  --shadow-control: 3px 3px 0 var(--ink);
+  --shadow-pressed: 1px 1px 0 var(--ink);
+  --press: translate(2px, 2px);
+  --shadow-surface: 5px 5px 0 var(--ink);
+
+  /* Two radius steps, never pills. */
+  --r-control: 6px;
+  --r-surface: 10px;
+
+  /* Spacing scale on a 4 px grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* Type. */
+  --font-ui: "Space Grotesk", system-ui, sans-serif;
+  --font-hand: "Shantell Sans", "Comic Sans MS", cursive;
+  --fs-micro: 11px;
+  --fs-small: 13px;
+  --fs-body: 15px;
+  --fs-title: 18px;
+  --fs-head: 22px;
+  --fs-display: 32px;
+
+  /* Controls. */
+  --ctl-h: 38px;
+  --icon: 20px;
+
+  /* Motion. */
+  --motion-fast: 80ms;
+  --motion-state: 160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-state: 0ms;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  padding-block: 0;
+}
+
+:focus-visible {
+  outline: var(--line) dashed var(--ink);
+  outline-offset: 3px;
+}
+
+#canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  display: block;
+}

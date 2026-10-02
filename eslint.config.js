@@ -16,6 +16,7 @@ export default tseslint.config(
       "max-depth": ["error", 4],
       "no-console": ["error", { allow: ["warn", "error"] }],
       "@typescript-eslint/no-non-null-assertion": "error",
+      "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }],
       "@typescript-eslint/only-throw-error": "error",
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },

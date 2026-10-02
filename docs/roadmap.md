@@ -5,8 +5,8 @@ the real check is noted in its commit, and its claims in `verification/` have me
 
 | Phase | Content | State |
 |---|---|---|
-| 0 | Skeleton, docs, check tooling, private repo | in progress |
-| 1 | Canvas core: model, viewport, pen, history, autosave | open |
+| 0 | Skeleton, docs, check tooling, private repo | done |
+| 1 | Canvas core: model, viewport, pen, history, autosave | done |
 | 2 | Shapes, text, notes, selection, style panel | open |
 | 3 | Annotations and underline presets, own presets | open |
 | 4 | Shape snapping and text highlighter | open |

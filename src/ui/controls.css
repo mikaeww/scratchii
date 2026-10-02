@@ -1,0 +1,153 @@
+/* Neo Brutalism controls: panels, buttons, toasts. Values only from theme.css. */
+
+.panel {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--paper);
+  border: var(--line-strong) solid var(--ink);
+  border-radius: var(--r-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.panel.top {
+  top: var(--space-4);
+  left: 50%;
+  translate: -50% 0;
+}
+
+.panel.top-left {
+  top: var(--space-4);
+  left: var(--space-4);
+  padding-inline: var(--space-3);
+  height: calc(var(--ctl-h) + 2 * var(--space-1) + 2 * var(--line-strong));
+}
+
+.panel.bottom-left {
+  bottom: var(--space-4);
+  left: var(--space-4);
+}
+
+.panel.bottom-right {
+  bottom: var(--space-4);
+  right: var(--space-4);
+}
+
+.divider {
+  width: var(--line);
+  align-self: stretch;
+  margin-inline: var(--space-1);
+  background: var(--ink);
+  border-radius: var(--line);
+}
+
+.brand {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--ctl-h);
+  height: var(--ctl-h);
+  margin-right: var(--space-2);
+  background: var(--sun);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+  font-family: var(--font-hand);
+  font-weight: 800;
+  font-size: var(--fs-head);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--ctl-h);
+  min-width: var(--ctl-h);
+  padding-inline: var(--space-3);
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-control);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease-out,
+    box-shadow var(--motion-fast) ease-out,
+    background-color var(--motion-state) ease-out;
+}
+
+.button.icon {
+  width: var(--ctl-h);
+  padding: 0;
+}
+
+.button svg {
+  width: var(--icon);
+  height: var(--icon);
+}
+
+.button:hover {
+  background: var(--cream);
+}
+
+.button:active,
+.button[aria-pressed="true"] {
+  transform: var(--press);
+  box-shadow: var(--shadow-pressed);
+}
+
+.button[aria-pressed="true"] {
+  background: var(--sun);
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.4;
+  transform: none;
+  box-shadow: var(--shadow-control);
+  background: var(--paper);
+}
+
+.readout {
+  min-width: calc(var(--ctl-h) * 1.5);
+  text-align: center;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.toasts {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: min(560px, 90vw);
+  padding: var(--space-2);
+  background: var(--paper);
+  border: var(--line-strong) solid var(--ink);
+  border-radius: var(--r-surface);
+  box-shadow: var(--shadow-surface);
+  font-size: var(--fs-small);
+}
+
+.toast.error {
+  background: var(--coral);
+}

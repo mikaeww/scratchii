@@ -10,4 +10,6 @@
 
 ## Plans
 
-None yet; the first one comes with the model in phase 1.
+| Plan | Component |
+|---|---|
+| [verification/model.md](verification/model.md) | Board and item model, validation, undo history, viewport |
