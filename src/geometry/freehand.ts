@@ -2,8 +2,7 @@
 // Not here: colour or drawing; the outline is the same for canvas and SVG export.
 import { getStroke } from "perfect-freehand";
 import type { Size, StrokePoint } from "../model/item.ts";
-
-export const PEN_WIDTH: Record<Size, number> = { s: 4, m: 7, l: 12 };
+import { PEN_WIDTH } from "./widths.ts";
 
 function average(a: number, b: number): number {
   return (a + b) / 2;

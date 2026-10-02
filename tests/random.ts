@@ -1,6 +1,20 @@
 // Seeded random numbers and sample data for property tests, so a failing seed can be replayed.
 import { createBoard, putItems, type Board } from "../src/model/board.ts";
-import { COLORS, SIZES, createItem, type Item, type StrokeItem } from "../src/model/item.ts";
+import {
+  COLORS,
+  ITEM_TYPES,
+  SIZES,
+  createItem,
+  type Color,
+  type Item,
+  type ItemType,
+  type LineItem,
+  type NoteItem,
+  type ShapeItem,
+  type Size,
+  type StrokeItem,
+  type TextItem,
+} from "../src/model/item.ts";
 
 export type Random = () => number;
 
@@ -26,19 +40,72 @@ export function pick<T>(random: Random, values: readonly T[]): T {
   return value;
 }
 
-export function randomItem(random: Random): Item {
-  const points = Array.from({ length: Math.floor(between(random, 1, 40)) }, () => {
-    return [between(random, -500, 500), between(random, -500, 500), random()] as const;
-  });
-  return createItem<StrokeItem>({
-    type: "stroke",
+function base(random: Random): { x: number; y: number; color: Color; size: Size } {
+  return {
     x: between(random, -1e5, 1e5),
     y: between(random, -1e5, 1e5),
     color: pick(random, COLORS),
     size: pick(random, SIZES),
-    points,
-    pressure: random() < 0.5,
+  };
+}
+
+const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
+  stroke: (random) =>
+    createItem<StrokeItem>({
+      ...base(random),
+      type: "stroke",
+      points: Array.from({ length: Math.floor(between(random, 1, 40)) }, () => {
+        return [between(random, -500, 500), between(random, -500, 500), random()] as const;
+      }),
+      pressure: random() < 0.5,
+    }),
+  rect: (random) => shape(random, "rect"),
+  ellipse: (random) => shape(random, "ellipse"),
+  line: (random) => line(random, "line"),
+  arrow: (random) => line(random, "arrow"),
+  text: (random) =>
+    createItem<TextItem>({
+      ...base(random),
+      type: "text",
+      text: random() < 0.5 ? "Hello" : "two\nlines",
+      fontSize: between(random, 8, 80),
+      width: between(random, 1, 800),
+      height: between(random, 1, 300),
+    }),
+  note: (random) =>
+    createItem<NoteItem>({
+      ...base(random),
+      type: "note",
+      text: "Note",
+      width: between(random, 40, 600),
+      height: between(random, 40, 600),
+      fill: pick(random, COLORS),
+    }),
+};
+
+function shape(random: Random, type: ShapeItem["type"]): ShapeItem {
+  return createItem<ShapeItem>({
+    ...base(random),
+    type,
+    width: between(random, 0, 1000),
+    height: between(random, 0, 1000),
+    fill: random() < 0.5 ? null : pick(random, COLORS),
   });
+}
+
+function line(random: Random, type: LineItem["type"]): LineItem {
+  return createItem<LineItem>({
+    ...base(random),
+    type,
+    points: [
+      [0, 0],
+      [between(random, -800, 800), between(random, -800, 800)],
+    ],
+  });
+}
+
+export function randomItem(random: Random, type: ItemType = pick(random, ITEM_TYPES)): Item {
+  return MAKERS[type](random);
 }
 
 export function randomBoard(random: Random): Board {

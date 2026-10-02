@@ -32,11 +32,43 @@ export interface StrokeItem extends ItemBase {
   readonly pressure: boolean;
 }
 
-export type Item = StrokeItem;
+export interface ShapeItem extends ItemBase {
+  readonly type: "rect" | "ellipse";
+  // Always positive; the item origin is the top-left corner.
+  readonly width: number;
+  readonly height: number;
+  readonly fill: Color | null;
+}
+
+// Start and end relative to the item origin; the start is (0, 0) when drawn.
+export interface LineItem extends ItemBase {
+  readonly type: "line" | "arrow";
+  readonly points: readonly [readonly [number, number], readonly [number, number]];
+}
+
+// Width and height are measured when the text is edited, so geometry never needs the DOM.
+export interface TextItem extends ItemBase {
+  readonly type: "text";
+  readonly text: string;
+  readonly fontSize: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+export interface NoteItem extends ItemBase {
+  readonly type: "note";
+  readonly text: string;
+  readonly width: number;
+  readonly height: number;
+  readonly fill: Color;
+}
+
+export type Item = StrokeItem | ShapeItem | LineItem | TextItem | NoteItem;
 export type ItemType = Item["type"];
-export const ITEM_TYPES: readonly ItemType[] = ["stroke"];
+export const ITEM_TYPES: readonly ItemType[] = ["stroke", "rect", "ellipse", "line", "arrow", "text", "note"];
 
 type Fresh<T extends Item> = Omit<T, "id" | "seed" | "version" | "nonce" | "deleted" | "updated">;
+type Changes<T extends Item> = Partial<Omit<T, "id" | "type" | "seed" | "version" | "nonce" | "updated">>;
 
 function randomInt(): number {
   return Math.floor(Math.random() * 2 ** 31);
@@ -54,6 +86,11 @@ export function createItem<T extends Item>(fields: Fresh<T>): T {
   } as T;
 }
 
-export function updateItem<T extends Item>(item: T, changes: Partial<Fresh<T>> & { deleted?: boolean }): T {
-  return { ...item, ...changes, version: item.version + 1, nonce: randomInt(), updated: Date.now() };
+// `next` is an edited copy of a stored item that still carries the stored version.
+export function reviseItem<T extends Item>(next: T): T {
+  return { ...next, version: next.version + 1, nonce: randomInt(), updated: Date.now() };
+}
+
+export function updateItem<T extends Item>(item: T, changes: Changes<T>): T {
+  return reviseItem({ ...item, ...changes });
 }

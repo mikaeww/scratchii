@@ -78,7 +78,7 @@ to 0003), check tooling: `tools/check.ts` (prettier, eslint, tsc, structure, tes
 - Renderer: dirty flag plus `requestAnimationFrame`, only on change.
 - History: undo and redo as snapshots of the immutable element list.
 - Autosave of the current board to IndexedDB.
-- Neo Brutalism tokens in `src/ui/theme.css`, toolbar with the tools of this phase.
+- Neo Brutalism tokens in `src/ui/theme/tokens.css`, toolbar with the tools of this phase.
 
 ### Phase 2 — shapes, text, notes, selection
 

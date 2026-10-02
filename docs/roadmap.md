@@ -7,7 +7,7 @@ the real check is noted in its commit, and its claims in `verification/` have me
 |---|---|---|
 | 0 | Skeleton, docs, check tooling, private repo | done |
 | 1 | Canvas core: model, viewport, pen, history, autosave | done |
-| 2 | Shapes, text, notes, selection, style panel | open |
+| 2 | Shapes, text, notes, selection, style panel | done |
 | 3 | Annotations and underline presets, own presets | open |
 | 4 | Shape snapping and text highlighter | open |
 | 5 | `.scratchii` files, PNG/SVG/PDF export, library | open |

@@ -1,12 +1,12 @@
 // Translates DOM pointer, wheel and keyboard events on the canvas into tool calls and editor commands.
 // Not here: what a tool does with a sample.
 import type { Editor, ToolName } from "./editor.ts";
+import { attachClipboard, handleShortcut } from "./shortcuts.ts";
 import type { PointerSample, Tool } from "./tools/tool.ts";
 import { panBy, screenToWorld, zoomAt, type Vec } from "./viewport.ts";
 
 export type Tools = Readonly<Record<ToolName, Tool>>;
 
-const TOOL_KEYS: Readonly<Record<string, ToolName>> = { p: "pen", h: "hand" };
 const LINE_HEIGHT = 16;
 
 function sampleOf(canvas: HTMLCanvasElement, editor: Editor, event: PointerEvent): PointerSample {
@@ -17,6 +17,7 @@ function sampleOf(canvas: HTMLCanvasElement, editor: Editor, event: PointerEvent
     world: screenToWorld(editor.view, screen),
     pressure: event.pressure,
     hasPressure: event.pointerType === "pen",
+    shift: event.shiftKey,
   };
 }
 
@@ -76,30 +77,20 @@ function attachWheel(canvas: HTMLCanvasElement, editor: Editor): void {
   );
 }
 
-function handleShortcut(event: KeyboardEvent, editor: Editor): boolean {
-  const key = event.key.toLowerCase();
-  const command = event.ctrlKey || event.metaKey;
-  if (command && key === "z") {
-    if (event.shiftKey) editor.redo();
-    else editor.undo();
-    return true;
-  }
-  if (command && key === "y") {
-    editor.redo();
-    return true;
-  }
-  const tool = TOOL_KEYS[key];
-  if (!command && !event.altKey && tool !== undefined) {
-    editor.setTool(tool);
-    return true;
-  }
-  return false;
-}
-
-export function attachInput(canvas: HTMLCanvasElement, editor: Editor, tools: Tools): void {
+export function attachInput(
+  canvas: HTMLCanvasElement,
+  editor: Editor,
+  tools: Tools,
+  onDoubleClick: (world: Vec) => void,
+): void {
   let space = false;
   attachPointer(canvas, editor, tools, () => space);
   attachWheel(canvas, editor);
+  attachClipboard(editor, isTyping);
+  canvas.addEventListener("dblclick", (event) => {
+    const box = canvas.getBoundingClientRect();
+    onDoubleClick(screenToWorld(editor.view, [event.clientX - box.left, event.clientY - box.top]));
+  });
   window.addEventListener("keydown", (event) => {
     if (isTyping(event.target)) return;
     if (event.key === " ") {

@@ -16,28 +16,29 @@ export function createPen(editor: Editor): Tool {
         type: "stroke",
         x: sample.world[0],
         y: sample.world[1],
-        ...editor.style,
+        color: editor.style.color,
+        size: editor.style.size,
         points: [],
         pressure: sample.hasPressure,
       });
       draft = { ...draft, points: [relative(draft, sample)] };
-      editor.setDraft(draft);
+      editor.setDraft([draft]);
     },
     move(sample) {
       if (draft === null) return;
       draft = { ...draft, points: [...draft.points, relative(draft, sample)] };
-      editor.setDraft(draft);
+      editor.setDraft([draft]);
     },
     up() {
       if (draft === null) return;
       const finished = draft;
       draft = null;
-      editor.setDraft(null);
+      editor.setDraft([]);
       editor.commit([finished]);
     },
     cancel() {
       draft = null;
-      editor.setDraft(null);
+      editor.setDraft([]);
     },
   };
 }

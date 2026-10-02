@@ -16,7 +16,7 @@ shadows, and handwritten text.
 
 ## Decision
 Neo Brutalism everywhere, light only, overriding these clean-project rules for this project: colour accents are
-allowed from the fixed palette in `src/ui/theme.css`, black outlines and hard offset shadows are the structure,
+allowed from the fixed palette in `src/ui/theme/tokens.css`, black outlines and hard offset shadows are the structure,
 and there is no dark theme. Everything else from clean-project stays: values only as tokens, one font scale and
 one spacing scale, two radius steps (no pills), equal padding on all sides, one primary action per context,
 visible keyboard focus, sufficient contrast, reduced motion.

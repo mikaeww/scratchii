@@ -7,6 +7,8 @@ export interface PointerSample {
   // In [0, 1]; meaningful only when `hasPressure` is true.
   readonly pressure: number;
   readonly hasPressure: boolean;
+  // Shift constrains shapes and adds to the selection.
+  readonly shift: boolean;
 }
 
 export interface Tool {

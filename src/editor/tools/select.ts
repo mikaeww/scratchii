@@ -1,0 +1,96 @@
+// The select tool: click to select, shift-click to add, drag to move, drag a corner to resize, drag on empty
+// canvas for a marquee. Double-click editing is wired in input.ts.
+import { boundsOf } from "../../geometry/bounds.ts";
+import { boxFromPoints, overlaps, type Box } from "../../geometry/box.ts";
+import { itemAt } from "../../geometry/hit.ts";
+import { moveItem, scaleItem } from "../../geometry/transform.ts";
+import { reviseItem, type Item } from "../../model/item.ts";
+import type { Editor } from "../editor.ts";
+import { corner, geometryBox, handleAt, resizeBox, selectionBox, type Handle } from "../selection.ts";
+import type { Vec } from "../viewport.ts";
+import type { PointerSample, Tool } from "./tool.ts";
+
+const REACH = 6;
+
+type Gesture =
+  | { readonly kind: "move"; readonly start: Vec; readonly items: readonly Item[] }
+  | {
+      readonly kind: "resize";
+      readonly handle: Handle;
+      readonly box: Box;
+      readonly start: Vec;
+      readonly items: readonly Item[];
+    }
+  | { readonly kind: "marquee"; readonly start: Vec; readonly base: ReadonlySet<string> };
+
+function begin(editor: Editor, sample: PointerSample): Gesture {
+  const selected = editor.selected();
+  const box = selectionBox(selected);
+  const handle = box === null ? null : handleAt(box, editor.view, sample.screen);
+  const geometry = geometryBox(selected);
+  if (handle !== null && geometry !== null) {
+    return { kind: "resize", handle, box: geometry, start: sample.world, items: selected };
+  }
+  const hit = itemAt(editor.scene(), sample.world, REACH / editor.view.zoom);
+  if (hit === null) {
+    if (!sample.shift) editor.setSelection([]);
+    return { kind: "marquee", start: sample.world, base: editor.selection };
+  }
+  if (sample.shift) {
+    const next = new Set(editor.selection);
+    if (next.has(hit.id)) next.delete(hit.id);
+    else next.add(hit.id);
+    editor.setSelection(next);
+  } else if (!editor.selection.has(hit.id)) {
+    editor.setSelection([hit.id]);
+  }
+  return { kind: "move", start: sample.world, items: editor.selected() };
+}
+
+function preview(editor: Editor, gesture: Gesture, sample: PointerSample): void {
+  switch (gesture.kind) {
+    case "move": {
+      const dx = sample.world[0] - gesture.start[0];
+      const dy = sample.world[1] - gesture.start[1];
+      editor.setDraft(gesture.items.map((item) => moveItem(item, dx, dy)));
+      return;
+    }
+    case "resize": {
+      const [cx, cy] = corner(gesture.box, gesture.handle);
+      const target: Vec = [cx + sample.world[0] - gesture.start[0], cy + sample.world[1] - gesture.start[1]];
+      const to = resizeBox(gesture.box, gesture.handle, target, sample.shift);
+      editor.setDraft(gesture.items.map((item) => scaleItem(item, gesture.box, to)));
+      return;
+    }
+    case "marquee": {
+      const box = boxFromPoints(gesture.start, sample.world);
+      const inside = editor.scene().filter((item) => overlaps(box, boundsOf(item)));
+      editor.setMarquee(box);
+      editor.setSelection([...gesture.base, ...inside.map((item) => item.id)]);
+    }
+  }
+}
+
+export function createSelect(editor: Editor): Tool {
+  let gesture: Gesture | null = null;
+  const reset = (): void => {
+    gesture = null;
+    editor.setDraft([]);
+    editor.setMarquee(null);
+  };
+  return {
+    cursor: "default",
+    down(sample) {
+      gesture = begin(editor, sample);
+    },
+    move(sample) {
+      if (gesture !== null) preview(editor, gesture, sample);
+    },
+    up() {
+      const changed = gesture?.kind === "marquee" ? [] : editor.draft.map(reviseItem);
+      reset();
+      editor.commit(changed);
+    },
+    cancel: reset,
+  };
+}

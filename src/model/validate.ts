@@ -1,7 +1,18 @@
 // Turns untrusted JSON (files, clipboard, IndexedDB, sync requests) into a Board or fails with the exact path.
 // Not here: migrations between format versions; an unknown shape is an error, never a guess.
 import type { Board } from "./board.ts";
-import { COLORS, ITEM_TYPES, SIZES, type Item, type ItemBase, type StrokePoint } from "./item.ts";
+import {
+  COLORS,
+  ITEM_TYPES,
+  SIZES,
+  type Color,
+  type Item,
+  type ItemBase,
+  type ItemType,
+  type LineItem,
+  type ShapeItem,
+  type StrokePoint,
+} from "./item.ts";
 
 export class ValidationError extends Error {
   readonly path: string;
@@ -95,15 +106,80 @@ function base(fields: Fields, path: string): ItemBase {
   };
 }
 
+function positive(value: unknown, path: string): number {
+  const number = finite(value, path);
+  if (number < 0) throw new ValidationError(path, "expected a number ≥ 0");
+  return number;
+}
+
+function linePoint(value: unknown, path: string): readonly [number, number] {
+  const [x, y, ...rest] = list(value, path, finite, 2);
+  if (x === undefined || y === undefined || rest.length > 0)
+    throw new ValidationError(path, "expected [x, y]");
+  return [x, y];
+}
+
+function linePoints(value: unknown, path: string): LineItem["points"] {
+  const [start, end] = list(value, path, linePoint, 2);
+  if (start === undefined || end === undefined) throw new ValidationError(path, "expected [start, end]");
+  return [start, end];
+}
+
+function nullableColor(value: unknown, path: string): Color | null {
+  return value === null ? null : oneOf(value, path, COLORS);
+}
+
+type Reader = (fields: Fields, path: string) => Omit<Item, keyof ItemBase>;
+
+const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> = {
+  stroke: [
+    ["points", "pressure"],
+    (f, p) => ({
+      type: "stroke",
+      points: list(f.points, `${p}.points`, strokePoint),
+      pressure: flag(f.pressure, `${p}.pressure`),
+    }),
+  ],
+  rect: [["width", "height", "fill"], (f, p) => shape("rect", f, p)],
+  ellipse: [["width", "height", "fill"], (f, p) => shape("ellipse", f, p)],
+  line: [["points"], (f, p) => ({ type: "line", points: linePoints(f.points, `${p}.points`) })],
+  arrow: [["points"], (f, p) => ({ type: "arrow", points: linePoints(f.points, `${p}.points`) })],
+  text: [
+    ["text", "fontSize", "width", "height"],
+    (f, p) => ({
+      type: "text",
+      text: text(f.text, `${p}.text`),
+      fontSize: positive(f.fontSize, `${p}.fontSize`),
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+    }),
+  ],
+  note: [
+    ["text", "width", "height", "fill"],
+    (f, p) => ({
+      type: "note",
+      text: text(f.text, `${p}.text`),
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+      fill: oneOf(f.fill, `${p}.fill`, COLORS),
+    }),
+  ],
+};
+
+function shape(type: ShapeItem["type"], fields: Fields, path: string): Omit<ShapeItem, keyof ItemBase> {
+  return {
+    type,
+    width: positive(fields.width, `${path}.width`),
+    height: positive(fields.height, `${path}.height`),
+    fill: nullableColor(fields.fill, `${path}.fill`),
+  };
+}
+
 export function validateItem(value: unknown, path: string): Item {
   const type = oneOf(object(value, path).type, `${path}.type`, ITEM_TYPES);
-  const fields = record(value, path, [...BASE_KEYS, "points", "pressure"]);
-  return {
-    ...base(fields, path),
-    type,
-    points: list(fields.points, `${path}.points`, strokePoint),
-    pressure: flag(fields.pressure, `${path}.pressure`),
-  };
+  const [keys, read] = READERS[type];
+  const fields = record(value, path, [...BASE_KEYS, ...keys]);
+  return { ...base(fields, path), ...read(fields, path) } as Item;
 }
 
 export function validateBoard(value: unknown, path = "board"): Board {

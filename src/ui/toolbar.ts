@@ -22,6 +22,13 @@ function iconButton(name: IconName, label: TextKey, action: () => void): HTMLBut
   return button;
 }
 
+function divider(): HTMLElement {
+  const element = document.createElement("span");
+  element.className = "divider";
+  element.setAttribute("aria-hidden", "true");
+  return element;
+}
+
 function brand(): HTMLElement {
   const element = panel("top-left");
   const mark = document.createElement("span");
@@ -35,16 +42,26 @@ function brand(): HTMLElement {
   return element;
 }
 
-const TOOLS: readonly [ToolName, IconName, TextKey][] = [
-  ["hand", "hand", "tool.hand"],
-  ["pen", "pen", "tool.pen"],
+const TOOLS: readonly ToolName[] = [
+  "select",
+  "hand",
+  "pen",
+  "rect",
+  "ellipse",
+  "arrow",
+  "line",
+  "text",
+  "note",
+  "eraser",
 ];
+// Groups in the bar: moving around, drawing, shapes, words, removing.
+const DIVIDE_AFTER = new Set<ToolName>(["hand", "pen", "line", "note"]);
 
 function toolPanel(editor: Editor): HTMLElement {
   const element = panel("top");
   element.setAttribute("role", "toolbar");
-  const buttons = TOOLS.map(([tool, name, label]) => {
-    const button = iconButton(name, label, () => {
+  const buttons = TOOLS.map((tool) => {
+    const button = iconButton(tool, `tool.${tool}`, () => {
       editor.setTool(tool);
     });
     return [tool, button] as const;
@@ -56,7 +73,10 @@ function toolPanel(editor: Editor): HTMLElement {
     if (change === "tool") sync();
   });
   sync();
-  element.append(...buttons.map(([, button]) => button));
+  for (const [tool, button] of buttons) {
+    element.append(button);
+    if (DIVIDE_AFTER.has(tool)) element.append(divider());
+  }
   return element;
 }
 

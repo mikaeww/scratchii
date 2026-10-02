@@ -3,6 +3,7 @@ import type { Editor } from "../editor/editor.ts";
 import type { Tools } from "../editor/input.ts";
 import { drawScene } from "../render/canvas.ts";
 import type { Ink } from "../render/ink.ts";
+import { drawOverlay } from "../render/overlay.ts";
 
 export class CanvasUnavailableError extends Error {
   constructor() {
@@ -25,6 +26,7 @@ export function mountStage(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, 
       ratio: window.devicePixelRatio,
     };
     drawScene(context, scene, ink);
+    drawOverlay(context, editor, ink, scene.ratio);
   };
   const request = (): void => {
     if (pending) return;

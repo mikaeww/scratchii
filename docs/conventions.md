@@ -40,7 +40,7 @@ Forbidden module names: `utils`, `util`, `helpers`, `helper`, `misc`, `common`, 
 ## Interface
 
 - Colours, outlines, shadows, radii, spacing, font sizes and motion come only from the tokens in
-  `src/ui/theme.css` (ADR 0002). Canvas drawing reads the same values through `src/render/ink.ts`.
+  `src/ui/theme/tokens.css` (ADR 0002). Canvas drawing reads the same values through `src/render/ink.ts`.
 - Neo Brutalism: black outlines, flat fills from the palette, hard offset shadows without blur. Radii in two
   steps, never pills. Pressed controls move into their shadow.
 - Light only. Every control is reachable by keyboard and shows a visible focus ring; reduced motion removes

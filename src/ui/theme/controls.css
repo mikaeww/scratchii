@@ -1,4 +1,4 @@
-/* Neo Brutalism controls: panels, buttons, toasts. Values only from theme.css. */
+/* Neo Brutalism controls: panels, buttons, toasts. Values only from theme/tokens.css. */
 
 .panel {
   position: fixed;
@@ -150,4 +150,100 @@
 
 .toast.error {
   background: var(--coral);
+}
+
+.text-editor {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  font-family: var(--font-hand);
+  font-weight: 500;
+  white-space: pre;
+  caret-color: var(--ink);
+}
+
+.text-editor.wrap {
+  white-space: pre-wrap;
+}
+
+.panel.left {
+  top: 50%;
+  left: var(--space-4);
+  translate: 0 -50%;
+}
+
+.style-panel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.style-section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(3, var(--swatch));
+  gap: var(--space-2);
+}
+
+.sizes {
+  display: grid;
+  grid-template-columns: repeat(3, var(--swatch));
+  gap: var(--space-2);
+}
+
+.sizes .button {
+  min-width: 0;
+  width: var(--swatch);
+  height: var(--swatch);
+  padding: 0;
+}
+
+.swatch {
+  display: grid;
+  place-items: center;
+  width: var(--swatch);
+  height: var(--swatch);
+  padding: 0;
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-control);
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease-out,
+    box-shadow var(--motion-fast) ease-out;
+}
+
+.swatch svg {
+  width: var(--icon);
+  height: var(--icon);
+  color: var(--coral);
+}
+
+.swatch:active,
+.swatch[aria-pressed="true"] {
+  transform: var(--press);
+  box-shadow: var(--shadow-pressed);
+}
+
+.swatch[aria-pressed="true"] {
+  outline: var(--line) solid var(--ink);
+  outline-offset: 2px;
 }

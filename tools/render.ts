@@ -28,7 +28,44 @@ function loop(cx: number, cy: number, radius: number): Point[] {
   });
 }
 
+async function drag(page: Page, from: Point, to: Point): Promise<void> {
+  await stroke(page, [from, to]);
+}
+
+async function type(page: Page, at: Point, words: string): Promise<void> {
+  await page.mouse.click(...at);
+  await page.keyboard.type(words);
+  await page.keyboard.press("Escape");
+}
+
+async function tool(page: Page, key: string): Promise<void> {
+  await page.keyboard.press(key);
+}
+
+async function board(page: Page): Promise<void> {
+  await tool(page, "r");
+  await drag(page, [260, 180], [520, 330]);
+  await page.click('[aria-label="Coral"] >> nth=1');
+  await tool(page, "o");
+  await drag(page, [600, 190], [800, 330]);
+  await tool(page, "a");
+  await drag(page, [530, 260], [590, 260]);
+  await tool(page, "n");
+  await type(page, [960, 260], "Buy more yellow paint and call the print shop");
+  await tool(page, "t");
+  await type(page, [300, 450], "Scratchii plan");
+  await page.click('[aria-label="Violet"] >> nth=0');
+  await tool(page, "p");
+  await stroke(page, wave(300, 510, 260));
+}
+
 const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
+  board,
+  selected: async (page) => {
+    await board(page);
+    await tool(page, "v");
+    await page.mouse.click(390, 255);
+  },
   empty: async () => {},
   doodle: async (page) => {
     await stroke(page, [

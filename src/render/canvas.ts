@@ -2,11 +2,12 @@
 import type { Viewport } from "../editor/viewport.ts";
 import type { Item } from "../model/item.ts";
 import type { Ink } from "./ink.ts";
-import { opsFor, type DrawOp } from "./ops.ts";
+import { handFont } from "./measure.ts";
+import { opsFor, type PathOp, type TextOp } from "./ops.ts";
 
-const paths = new WeakMap<DrawOp, Path2D>();
+const paths = new WeakMap<PathOp, Path2D>();
 
-function pathOf(op: DrawOp): Path2D {
+function pathOf(op: PathOp): Path2D {
   let path = paths.get(op);
   if (path === undefined) {
     path = new Path2D(op.d);
@@ -15,7 +16,16 @@ function pathOf(op: DrawOp): Path2D {
   return path;
 }
 
-function paint(context: CanvasRenderingContext2D, op: DrawOp, ink: Ink, color: string | null): void {
+function write(context: CanvasRenderingContext2D, op: TextOp, ink: Ink): void {
+  context.font = handFont(op.fontSize);
+  context.textBaseline = "top";
+  context.fillStyle = ink.colors[op.color];
+  op.lines.forEach((line, index) => {
+    context.fillText(line, op.x, op.y + index * op.lineHeight);
+  });
+}
+
+function paint(context: CanvasRenderingContext2D, op: PathOp, ink: Ink, color: string | null): void {
   const path = pathOf(op);
   if (op.fill !== null) {
     context.fillStyle = color ?? ink.colors[op.fill];
@@ -35,13 +45,16 @@ function drawItem(context: CanvasRenderingContext2D, item: Item, ink: Ink): void
   context.translate(item.x, item.y);
   const ops = opsFor(item);
   for (const op of ops) {
-    if (!op.shadow) continue;
+    if (op.kind !== "path" || !op.shadow) continue;
     context.save();
     context.translate(ink.shadow[0], ink.shadow[1]);
     paint(context, op, ink, ink.colors.ink);
     context.restore();
   }
-  for (const op of ops) paint(context, op, ink, null);
+  for (const op of ops) {
+    if (op.kind === "path") paint(context, op, ink, null);
+    else write(context, op, ink);
+  }
   context.restore();
 }
 

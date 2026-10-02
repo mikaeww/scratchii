@@ -7,7 +7,7 @@ src/editor/           Editor (session state, undo), viewport maths, input, tools
 src/geometry/         item shapes as SVG path data (freehand outline, later rough shapes)
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
 src/storage/          IndexedDB boards, autosave and the last open board
-src/ui/               DOM chrome: tokens (theme.css), controls, toolbar, stage, toasts, text
+src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text
 ```
 
 ## Data flow
@@ -19,6 +19,16 @@ src/ui/               DOM chrome: tokens (theme.css), controls, toolbar, stage, 
 4. `ui/stage.ts` redraws on the next animation frame; `render/ops.ts` caches the path list per item object, so
    only new or changed items are rebuilt.
 5. `storage/autosave.ts` writes the board to IndexedDB 400 ms after the last change and when the tab hides.
+
+## Tools and selection
+
+`editor/tools/` holds one tool per file (select, hand, pen, shapes, text and notes, eraser). Tools only build
+drafts and commit; keyboard shortcuts and the clipboard live in `editor/shortcuts.ts`, the commands they call
+in `editor/commands.ts`. Stacking order is the order of `board.items`: `]` and `[` move the selection to the
+top or bottom.
+
+Text widths are measured with the real font when editing ends (`render/measure.ts`) and stored on the item, so
+bounds and hit tests stay pure and run in Node.
 
 ## Versions
 

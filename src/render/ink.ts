@@ -1,4 +1,4 @@
-// Reads the drawing palette and shadow offset from the CSS tokens in src/ui/theme.css, the single source.
+// Reads the drawing palette and shadow offset from the CSS tokens in src/ui/theme/tokens.css, the single source.
 // Not here: interface colours that never reach the canvas.
 import { COLORS, type Color } from "../model/item.ts";
 
@@ -11,7 +11,7 @@ export interface Ink {
 
 export class MissingTokenError extends Error {
   constructor(token: string) {
-    super(`theme.css defines no ${token}`);
+    super(`theme/tokens.css defines no ${token}`);
     this.name = "MissingTokenError";
   }
 }

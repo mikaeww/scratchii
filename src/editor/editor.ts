@@ -1,15 +1,18 @@
-// The editing session of one board: items, viewport, active tool and style, the draft being drawn, and undo.
+// The editing session of one board: items, viewport, tool and style, selection, the draft being drawn, undo.
 // Not here: input handling (input.ts, tools/), drawing (src/render) or storage (src/storage).
-import { putItems, visibleItems, withItems, type Board } from "../model/board.ts";
+import type { Box } from "../geometry/box.ts";
+import { putItems, withItems, type Board } from "../model/board.ts";
 import { updateItem, type Color, type Item, type Size } from "../model/item.ts";
 import { History } from "./history.ts";
 import type { Viewport } from "./viewport.ts";
 
-export type ToolName = "pen" | "hand";
-export type Change = "board" | "items" | "view" | "tool" | "style" | "draft";
+export type ToolName =
+  "select" | "hand" | "pen" | "rect" | "ellipse" | "line" | "arrow" | "text" | "note" | "eraser";
+export type Change = "board" | "items" | "view" | "tool" | "style" | "draft" | "selection";
 
 export interface Style {
   readonly color: Color;
+  readonly fill: Color | null;
   readonly size: Size;
 }
 
@@ -33,8 +36,11 @@ export class Editor {
   board: Board;
   view: Viewport = { x: 0, y: 0, zoom: 1 };
   tool: ToolName = "pen";
-  style: Style = { color: "ink", size: "m" };
-  draft: Item | null = null;
+  style: Style = { color: "ink", fill: "paper", size: "m" };
+  // Work in progress: replaces stored items with the same id, or adds new ones, until committed.
+  draft: readonly Item[] = [];
+  selection: ReadonlySet<string> = new Set();
+  marquee: Box | null = null;
   private readonly history: History<readonly Item[]>;
   private readonly listeners = new Set<Listener>();
 
@@ -54,7 +60,8 @@ export class Editor {
 
   load(board: Board): void {
     this.board = board;
-    this.draft = null;
+    this.draft = [];
+    this.selection = new Set();
     this.history.reset(board.items);
     this.emit("board");
   }
@@ -62,6 +69,13 @@ export class Editor {
   commit(changed: readonly Item[]): void {
     if (changed.length === 0) return;
     this.board = putItems(this.board, changed);
+    this.history.commit(this.board.items);
+    this.emit("items");
+  }
+
+  // Replaces the whole item list, e.g. after reordering.
+  commitOrder(items: readonly Item[]): void {
+    this.board = withItems(this.board, items);
     this.history.commit(this.board.items);
     this.emit("items");
   }
@@ -93,6 +107,7 @@ export class Editor {
 
   setTool(tool: ToolName): void {
     this.tool = tool;
+    if (tool !== "select") this.setSelection([]);
     this.emit("tool");
   }
 
@@ -101,14 +116,33 @@ export class Editor {
     this.emit("style");
   }
 
-  setDraft(draft: Item | null): void {
+  setDraft(draft: readonly Item[]): void {
     this.draft = draft;
     this.emit("draft");
   }
 
-  // What the renderer draws: live items, then the draft on top.
+  setSelection(ids: Iterable<string>): void {
+    this.selection = new Set(ids);
+    this.emit("selection");
+  }
+
+  setMarquee(box: Box | null): void {
+    this.marquee = box;
+    this.emit("draft");
+  }
+
+  selected(): Item[] {
+    return this.board.items.filter((item) => !item.deleted && this.selection.has(item.id));
+  }
+
+  // What the renderer draws, bottom to top: stored items with the draft applied, then new draft items.
   scene(): Item[] {
-    const items = visibleItems(this.board);
-    return this.draft === null ? items : [...items, this.draft];
+    const drafts = new Map(this.draft.map((item) => [item.id, item]));
+    const items = this.board.items.map((item) => {
+      const draft = drafts.get(item.id);
+      drafts.delete(item.id);
+      return draft ?? item;
+    });
+    return [...items, ...drafts.values()].filter((item) => !item.deleted);
   }
 }
