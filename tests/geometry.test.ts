@@ -5,7 +5,7 @@ import { contains, grow, type Box } from "../src/geometry/box.ts";
 import { hitItem } from "../src/geometry/hit.ts";
 import { moveItem, scaleItem } from "../src/geometry/transform.ts";
 import type { Item } from "../src/model/item.ts";
-import { between, randomItem, seeded } from "./random.ts";
+import { between, randomPlaced, seeded } from "./random.ts";
 
 const EPSILON = 1e-6;
 
@@ -15,6 +15,8 @@ function storedPoints(item: Item): [number, number][] {
     case "line":
     case "arrow":
       return item.points.map(([x, y]) => [item.x + x, item.y + y]);
+    case "mark":
+      return [[item.x, item.y]];
     default:
       return [
         [item.x, item.y],
@@ -36,7 +38,7 @@ function closeBox(actual: Box, expected: Box): boolean {
 test("G1: bounds contain all stored geometry", () => {
   const random = seeded(10);
   for (let i = 0; i < 2000; i++) {
-    const item = randomItem(random);
+    const item = randomPlaced(random);
     const bounds = grow(boundsOf(item), EPSILON);
     for (const point of storedPoints(item)) assert.ok(contains(bounds, point), `case ${i} ${item.type}`);
   }
@@ -45,7 +47,7 @@ test("G1: bounds contain all stored geometry", () => {
 test("G2: centres of filled items and stored points of strokes and lines are hits", () => {
   const random = seeded(11);
   for (let i = 0; i < 2000; i++) {
-    const item = randomItem(random);
+    const item = randomPlaced(random);
     if (item.type === "stroke" || item.type === "line" || item.type === "arrow") {
       for (const point of storedPoints(item)) assert.ok(hitItem(item, point, 0), `case ${i} ${item.type}`);
     } else if ((item.type !== "rect" && item.type !== "ellipse") || item.fill !== null) {
@@ -58,7 +60,7 @@ test("G2: centres of filled items and stored points of strokes and lines are hit
 test("G3: points well outside the bounds never hit", () => {
   const random = seeded(12);
   for (let i = 0; i < 2000; i++) {
-    const item = randomItem(random);
+    const item = randomPlaced(random);
     const tolerance = between(random, 0, 10);
     const outside = grow(boundsOf(item), tolerance + 1);
     for (let k = 0; k < 20; k++) {
@@ -75,7 +77,7 @@ test("G3: points well outside the bounds never hit", () => {
 test("G4: moving shifts the bounds exactly", () => {
   const random = seeded(13);
   for (let i = 0; i < 2000; i++) {
-    const item = randomItem(random);
+    const item = randomPlaced(random);
     const dx = between(random, -1000, 1000);
     const dy = between(random, -1000, 1000);
     const before = boundsOf(item);
@@ -87,7 +89,7 @@ test("G4: moving shifts the bounds exactly", () => {
 test("G5: scaling maps the geometric box from one box to another", () => {
   const random = seeded(14);
   for (let i = 0; i < 2000; i++) {
-    const item = randomItem(random);
+    const item = randomPlaced(random);
     const from = shapeBox(item);
     const to = {
       x: between(random, -1e4, 1e4),

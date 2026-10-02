@@ -4,6 +4,7 @@ import type { Box } from "./box.ts";
 import { shapeBox } from "./bounds.ts";
 
 export function moveItem<T extends Item>(item: T, dx: number, dy: number): T {
+  if (item.type === "mark") return item;
   return { ...item, x: item.x + dx, y: item.y + dy };
 }
 
@@ -43,6 +44,8 @@ export function scaleItem<T extends Item>(item: T, from: Box, to: Box): T {
         height: box.height * scale,
       };
     }
+    case "mark":
+      return item;
     default:
       return { ...item, x, y, width: item.width * sx, height: item.height * sy };
   }

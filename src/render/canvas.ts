@@ -1,7 +1,8 @@
 // Draws a list of items onto a 2D canvas for a given viewport. Not here: when to draw (src/ui/stage.ts).
 import type { Viewport } from "../editor/viewport.ts";
-import type { Item } from "../model/item.ts";
+import type { Item, MarkItem } from "../model/item.ts";
 import type { Ink } from "./ink.ts";
+import { markOps } from "./marks.ts";
 import { handFont } from "./measure.ts";
 import { opsFor, type PathOp, type TextOp } from "./ops.ts";
 
@@ -27,6 +28,7 @@ function write(context: CanvasRenderingContext2D, op: TextOp, ink: Ink): void {
 
 function paint(context: CanvasRenderingContext2D, op: PathOp, ink: Ink, color: string | null): void {
   const path = pathOf(op);
+  context.globalAlpha = op.opacity;
   if (op.fill !== null) {
     context.fillStyle = color ?? ink.colors[op.fill];
     context.fill(path);
@@ -38,6 +40,7 @@ function paint(context: CanvasRenderingContext2D, op: PathOp, ink: Ink, color: s
     context.lineJoin = "round";
     context.stroke(path);
   }
+  context.globalAlpha = 1;
 }
 
 function drawItem(context: CanvasRenderingContext2D, item: Item, ink: Ink): void {
@@ -56,6 +59,20 @@ function drawItem(context: CanvasRenderingContext2D, item: Item, ink: Ink): void
     else write(context, op, ink);
   }
   context.restore();
+}
+
+function drawMarks(
+  context: CanvasRenderingContext2D,
+  marks: readonly MarkItem[],
+  target: Item,
+  layer: MarkItem["layer"],
+  ink: Ink,
+): void {
+  if (target.type !== "text") return;
+  for (const mark of marks) {
+    if (mark.layer !== layer) continue;
+    for (const op of markOps(mark, target)) paint(context, op, ink, null);
+  }
 }
 
 export interface Scene {
@@ -80,7 +97,16 @@ export function drawScene(context: CanvasRenderingContext2D, scene: Scene, ink: 
     -view.x * view.zoom * ratio,
     -view.y * view.zoom * ratio,
   );
+  const marks = new Map<string, MarkItem[]>();
   for (const item of scene.items) {
-    if (!item.deleted) drawItem(context, item, ink);
+    if (item.type === "mark" && !item.deleted)
+      marks.set(item.target, [...(marks.get(item.target) ?? []), item]);
+  }
+  for (const item of scene.items) {
+    if (item.deleted || item.type === "mark") continue;
+    const own = item.type === "text" ? (marks.get(item.id) ?? []) : [];
+    drawMarks(context, own, item, "behind", ink);
+    drawItem(context, item, ink);
+    drawMarks(context, own, item, "over", ink);
   }
 }

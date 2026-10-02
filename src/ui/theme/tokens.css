@@ -110,6 +110,11 @@ button {
   padding-block: 0;
 }
 
+/* Author display rules would otherwise beat the hidden attribute and leave empty panels on screen. */
+[hidden] {
+  display: none !important;
+}
+
 :focus-visible {
   outline: var(--line) dashed var(--ink);
   outline-offset: 3px;

@@ -13,6 +13,8 @@ import { createBoard } from "./model/board.ts";
 import { readInk } from "./render/ink.ts";
 import { keepSaved, openLastBoard } from "./storage/autosave.ts";
 import { openBoards } from "./storage/local.ts";
+import { mountContextMenu } from "./ui/menus/context-menu.ts";
+import { mountMarkPad } from "./ui/menus/mark-pad.ts";
 import { mountStage } from "./ui/stage.ts";
 import { stylePanel } from "./ui/style-panel.ts";
 import { mountTextEditor } from "./ui/text-editor.ts";
@@ -62,7 +64,9 @@ async function start(): Promise<void> {
     if (editor.tool === "select" && !editAt(editor, editing, world))
       editing.edit(newText(editor, world), true);
   });
-  mountStage(canvas, editor, readInk(document.documentElement), tools);
+  const ink = readInk(document.documentElement);
+  mountStage(canvas, editor, ink, tools);
+  mountContextMenu(canvas, editor, ink, mountMarkPad(editor, ink));
   mountChrome(chrome, editor, canvas);
   chrome.append(stylePanel(editor));
   if (database !== null) {

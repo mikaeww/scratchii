@@ -63,9 +63,38 @@ export interface NoteItem extends ItemBase {
   readonly fill: Color;
 }
 
-export type Item = StrokeItem | ShapeItem | LineItem | TextItem | NoteItem;
+// u along the text line, v across it from the top (0) to the bottom (1) of the line box; see src/annotate.
+export interface MarkStroke {
+  readonly points: readonly (readonly [u: number, v: number])[];
+  // Stroke width as a fraction of the line height; null uses the pen width of the mark's size.
+  readonly weight: number | null;
+}
+
+// An underline, strike-through, box or highlight on a text item. It has no position of its own and follows
+// its target; x and y stay 0.
+export interface MarkItem extends ItemBase {
+  readonly type: "mark";
+  readonly target: string;
+  // First and last line, inclusive; null marks every line.
+  readonly lines: readonly [number, number] | null;
+  readonly layer: "over" | "behind";
+  // Stretched marks span the line once; repeated marks tile one period per line height.
+  readonly fit: "stretch" | "repeat";
+  readonly strokes: readonly MarkStroke[];
+}
+
+export type Item = StrokeItem | ShapeItem | LineItem | TextItem | NoteItem | MarkItem;
 export type ItemType = Item["type"];
-export const ITEM_TYPES: readonly ItemType[] = ["stroke", "rect", "ellipse", "line", "arrow", "text", "note"];
+export const ITEM_TYPES: readonly ItemType[] = [
+  "stroke",
+  "rect",
+  "ellipse",
+  "line",
+  "arrow",
+  "text",
+  "note",
+  "mark",
+];
 
 type Fresh<T extends Item> = Omit<T, "id" | "seed" | "version" | "nonce" | "deleted" | "updated">;
 type Changes<T extends Item> = Partial<Omit<T, "id" | "type" | "seed" | "version" | "nonce" | "updated">>;

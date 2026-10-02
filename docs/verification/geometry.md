@@ -1,14 +1,15 @@
 # Verification: geometry
 
 Covers `src/geometry/box.ts`, `bounds.ts`, `hit.ts` and `transform.ts`: item bounds, hit tests, moving and
-scaling. The hand-drawn outlines themselves (roughjs, perfect-freehand) are libraries and are checked only by
+scaling. Marks have no geometry of their own (they follow their text, see annotate.md) and are left out
+of these claims; for them `hitItem` is always false. The hand-drawn outlines themselves (roughjs, perfect-freehand) are libraries and are checked only by
 looking at screenshots.
 
 ## Claims
 
 | # | Claim | Method | Oracle |
 |---|---|---|---|
-| G1 | `boundsOf(item)` contains every stored point of strokes and lines, and the full box of shapes, text and notes, widened by half the stroke width | Property test, 2000 random items of every type | The stored geometry, read directly |
+| G1 | `boundsOf(item)` contains every stored point of strokes and lines, and the full box of shapes, text and notes, widened by half the stroke width | Property test, 2000 random items of every type except marks | The stored geometry, read directly |
 | G2 | `hitItem` is true for the centre of filled shapes, notes and text, and for every stored point of strokes and lines | Property test, 2000 random items | Construction |
 | G3 | `hitItem` is false for every point farther than tolerance plus stroke width outside `boundsOf(item)` | Property test, 2000 items × 20 points | `boundsOf` (G1) |
 | G4 | `moveItem` by (dx, dy) moves `boundsOf` by exactly (dx, dy) | Property test, 2000 items | Arithmetic on the bounds |

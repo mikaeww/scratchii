@@ -1,4 +1,5 @@
 // Seeded random numbers and sample data for property tests, so a failing seed can be replayed.
+import { PRESETS } from "../src/annotate/presets.ts";
 import { createBoard, putItems, type Board } from "../src/model/board.ts";
 import {
   COLORS,
@@ -9,6 +10,7 @@ import {
   type Item,
   type ItemType,
   type LineItem,
+  type MarkItem,
   type NoteItem,
   type ShapeItem,
   type Size,
@@ -72,6 +74,7 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
       width: between(random, 1, 800),
       height: between(random, 1, 300),
     }),
+  mark: (random) => randomMark(random, crypto.randomUUID()),
   note: (random) =>
     createItem<NoteItem>({
       ...base(random),
@@ -82,6 +85,22 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
       fill: pick(random, COLORS),
     }),
 };
+
+export function randomMark(random: Random, target: string): MarkItem {
+  const preset = pick(random, PRESETS);
+  const first = Math.floor(random() * 3);
+  return createItem<MarkItem>({
+    ...base(random),
+    x: 0,
+    y: 0,
+    type: "mark",
+    target,
+    lines: random() < 0.5 ? null : [first, first + Math.floor(random() * 3)],
+    layer: preset.layer,
+    fit: preset.fit,
+    strokes: preset.strokes,
+  });
+}
 
 function shape(random: Random, type: ShapeItem["type"]): ShapeItem {
   return createItem<ShapeItem>({
@@ -106,6 +125,17 @@ function line(random: Random, type: LineItem["type"]): LineItem {
 
 export function randomItem(random: Random, type: ItemType = pick(random, ITEM_TYPES)): Item {
   return MAKERS[type](random);
+}
+
+// Items with geometry of their own: everything but marks, which follow their text.
+export function randomPlaced(random: Random): Item {
+  return randomItem(
+    random,
+    pick(
+      random,
+      ITEM_TYPES.filter((type) => type !== "mark"),
+    ),
+  );
 }
 
 export function randomBoard(random: Random): Board {

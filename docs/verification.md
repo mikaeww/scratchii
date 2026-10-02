@@ -14,3 +14,4 @@
 |---|---|
 | [verification/model.md](verification/model.md) | Board and item model, validation, undo history, viewport |
 | [verification/geometry.md](verification/geometry.md) | Item bounds, hit tests, moving and scaling |
+| [verification/annotate.md](verification/annotate.md) | Marks: presets, layout on text lines, own marks, deletion with their text |

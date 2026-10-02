@@ -6,6 +6,7 @@ src/model/            Board, Item, validation (trust boundary for every input)
 src/editor/           Editor (session state, undo), viewport maths, input, tools/
 src/geometry/         item shapes as SVG path data (freehand outline, later rough shapes)
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
+src/annotate/          marks: built-in presets, layout on text lines, own marks
 src/storage/          IndexedDB boards, autosave and the last open board
 src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text
 ```
@@ -29,6 +30,15 @@ top or bottom.
 
 Text widths are measured with the real font when editing ends (`render/measure.ts`) and stored on the item, so
 bounds and hit tests stay pure and run in Node.
+
+## Marks
+
+A mark (underline, strike-through, box, highlight) is an item of type `mark` that points at a text item and
+carries its strokes in line-local units. `render/marks.ts` measures the text's lines and lays the strokes onto
+them, so marks follow every move, resize and edit of their text. The strokes live in the item, never only in a
+preset, so a board with own marks looks the same in every browser. Deleting a text deletes its marks in the
+same commit (`Editor.commit`). The right-click menu (`ui/menus/context-menu.ts`) applies presets; the pad
+(`ui/menus/mark-pad.ts`) records own ones.
 
 ## Versions
 

@@ -14,6 +14,7 @@ export interface PathOp {
   readonly width: number;
   // Hard offset shadow in ink, drawn underneath (ADR 0002).
   readonly shadow: boolean;
+  readonly opacity: number;
 }
 
 export interface TextOp {
@@ -31,11 +32,19 @@ export type DrawOp = PathOp | TextOp;
 const cache = new WeakMap<Item, readonly DrawOp[]>();
 
 function fillOp(d: string, fill: Color): PathOp {
-  return { kind: "path", d, fill, stroke: null, width: 0, shadow: true };
+  return { kind: "path", d, fill, stroke: null, width: 0, shadow: true, opacity: 1 };
 }
 
 function outlineOps(paths: RoughPaths, color: Color, width: number): PathOp[] {
-  return paths.outline.map((d) => ({ kind: "path", d, fill: null, stroke: color, width, shadow: false }));
+  return paths.outline.map((d) => ({
+    kind: "path",
+    d,
+    fill: null,
+    stroke: color,
+    width,
+    shadow: false,
+    opacity: 1,
+  }));
 }
 
 function noteOps(item: NoteItem): DrawOp[] {
@@ -61,7 +70,7 @@ function build(item: Item): readonly DrawOp[] {
   switch (item.type) {
     case "stroke": {
       const d = strokePath(item.points, item.size, item.pressure);
-      return [{ kind: "path", d, fill: item.color, stroke: null, width: 0, shadow: false }];
+      return [{ kind: "path", d, fill: item.color, stroke: null, width: 0, shadow: false, opacity: 1 }];
     }
     case "rect":
     case "ellipse": {
@@ -88,6 +97,9 @@ function build(item: Item): readonly DrawOp[] {
     }
     case "note":
       return noteOps(item);
+    // Marks depend on their target and are drawn by render/marks.ts.
+    case "mark":
+      return [];
   }
 }
 

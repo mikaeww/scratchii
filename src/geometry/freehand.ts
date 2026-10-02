@@ -29,17 +29,28 @@ export function outlineToPath(outline: readonly number[][]): string {
   return `${d}Z`;
 }
 
-export function strokePath(points: readonly StrokePoint[], size: Size, pressure: boolean): string {
+export interface FreehandOptions {
+  readonly width: number;
+  readonly pressure: boolean;
+  // 0 keeps the width even; higher values let speed or pressure thin the line.
+  readonly thinning: number;
+}
+
+export function freehandPath(points: readonly (readonly number[])[], options: FreehandOptions): string {
   const outline = getStroke(
-    points.map(([x, y, p]) => [x, y, p]),
+    points.map(([x = 0, y = 0, p = 0.5]) => [x, y, p]),
     {
-      size: PEN_WIDTH[size],
-      thinning: pressure ? 0.6 : 0.45,
+      size: options.width,
+      thinning: options.thinning,
       smoothing: 0.6,
       streamline: 0.45,
-      simulatePressure: !pressure,
+      simulatePressure: !options.pressure,
       last: true,
     },
   );
   return outlineToPath(outline);
+}
+
+export function strokePath(points: readonly StrokePoint[], size: Size, pressure: boolean): string {
+  return freehandPath(points, { width: PEN_WIDTH[size], pressure, thinning: pressure ? 0.6 : 0.45 });
 }

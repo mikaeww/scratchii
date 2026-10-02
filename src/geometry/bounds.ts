@@ -12,6 +12,9 @@ export function shapeBox(item: Item): Box {
       const box = boxAround(item.points);
       return { ...box, x: box.x + item.x, y: box.y + item.y };
     }
+    // Marks follow their text and have no box of their own (src/annotate lays them out).
+    case "mark":
+      return { x: item.x, y: item.y, width: 0, height: 0 };
     default:
       return { x: item.x, y: item.y, width: item.width, height: item.height };
   }

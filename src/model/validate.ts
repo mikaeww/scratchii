@@ -10,6 +10,8 @@ import {
   type ItemBase,
   type ItemType,
   type LineItem,
+  type MarkItem,
+  type MarkStroke,
   type ShapeItem,
   type StrokePoint,
 } from "./item.ts";
@@ -125,6 +127,23 @@ function linePoints(value: unknown, path: string): LineItem["points"] {
   return [start, end];
 }
 
+function markStroke(value: unknown, path: string): MarkStroke {
+  const fields = record(value, path, ["points", "weight"]);
+  return {
+    points: list(fields.points, `${path}.points`, linePoint),
+    weight: fields.weight === null ? null : positive(fields.weight, `${path}.weight`),
+  };
+}
+
+function lineRange(value: unknown, path: string): MarkItem["lines"] {
+  if (value === null) return null;
+  const [first, last, ...rest] = list(value, path, integer, 2);
+  if (first === undefined || last === undefined || rest.length > 0 || first > last) {
+    throw new ValidationError(path, "expected [first, last] with first ≤ last");
+  }
+  return [first, last];
+}
+
 function nullableColor(value: unknown, path: string): Color | null {
   return value === null ? null : oneOf(value, path, COLORS);
 }
@@ -152,6 +171,17 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
       fontSize: positive(f.fontSize, `${p}.fontSize`),
       width: positive(f.width, `${p}.width`),
       height: positive(f.height, `${p}.height`),
+    }),
+  ],
+  mark: [
+    ["target", "lines", "layer", "fit", "strokes"],
+    (f, p) => ({
+      type: "mark",
+      target: text(f.target, `${p}.target`),
+      lines: lineRange(f.lines, `${p}.lines`),
+      layer: oneOf(f.layer, `${p}.layer`, ["over", "behind"] as const),
+      fit: oneOf(f.fit, `${p}.fit`, ["stretch", "repeat"] as const),
+      strokes: list(f.strokes, `${p}.strokes`, markStroke, 64),
     }),
   ],
   note: [

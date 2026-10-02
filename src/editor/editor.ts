@@ -66,9 +66,18 @@ export class Editor {
     this.emit("board");
   }
 
+  // Marks on a text that is deleted here are deleted in the same step, so one undo brings both back.
   commit(changed: readonly Item[]): void {
     if (changed.length === 0) return;
-    this.board = putItems(this.board, changed);
+    const gone = new Set(changed.filter((item) => item.deleted).map((item) => item.id));
+    const listed = new Set(changed.map((item) => item.id));
+    const orphans = this.board.items.filter(
+      (item) => item.type === "mark" && !item.deleted && gone.has(item.target) && !listed.has(item.id),
+    );
+    this.board = putItems(this.board, [
+      ...changed,
+      ...orphans.map((item) => updateItem(item, { deleted: true })),
+    ]);
     this.history.commit(this.board.items);
     this.emit("items");
   }

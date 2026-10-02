@@ -59,7 +59,39 @@ async function board(page: Page): Promise<void> {
   await stroke(page, wave(300, 510, 260));
 }
 
+const MARKS = ["Line", "Double line", "Wave", "Zigzag", "Marker", "Scribble", "Box", "Strike through"];
+
+async function marks(page: Page): Promise<void> {
+  await tool(page, "t");
+  for (const [index, name] of MARKS.entries()) {
+    const at: Point = [300 + (index % 2) * 420, 200 + Math.floor(index / 2) * 110];
+    await type(page, at, `${name} on a text`);
+    await page.mouse.click(at[0] + 20, at[1], { button: "right" });
+    await page.click(`.mark-option[aria-label="${name}"]`);
+  }
+  await page.mouse.click(1100, 700);
+}
+
 const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
+  marks,
+  menu: async (page) => {
+    await tool(page, "t");
+    await type(page, [420, 300], "Right-click me");
+    await page.mouse.click(460, 300, { button: "right" });
+  },
+  pad: async (page) => {
+    await tool(page, "t");
+    await type(page, [420, 300], "Own underline");
+    await page.mouse.click(460, 300, { button: "right" });
+    await page.click("text=Draw your own…");
+    const box = await page.locator(".pad").boundingBox();
+    if (box === null) throw new Error("pad did not open");
+    await stroke(page, wave(box.x + 90, box.y + 150, 340));
+    await stroke(page, [
+      [box.x + 90, box.y + 165],
+      [box.x + 430, box.y + 160],
+    ]);
+  },
   board,
   selected: async (page) => {
     await board(page);
