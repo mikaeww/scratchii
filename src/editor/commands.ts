@@ -1,6 +1,16 @@
 // Editing commands on the selection, shared by keyboard shortcuts and buttons.
 import { moveItem } from "../geometry/transform.ts";
-import { createItem, reviseItem, updateItem, type Item } from "../model/item.ts";
+import { shapeBox } from "../geometry/bounds.ts";
+import { unite } from "../geometry/box.ts";
+import { LINE_HEIGHT } from "../geometry/widths.ts";
+import {
+  createItem,
+  reviseItem,
+  updateItem,
+  type Item,
+  type StrokeItem,
+  type TextItem,
+} from "../model/item.ts";
 import { validateItem } from "../model/validate.ts";
 import type { Editor, Style } from "./editor.ts";
 
@@ -87,4 +97,34 @@ export function pasteItems(editor: Editor, text: string): boolean {
   editor.commit(created);
   editor.setSelection(created.map((item) => item.id));
   return true;
+}
+
+export type Measure = (text: string, fontSize: number) => { width: number; height: number };
+
+// Replaces handwriting with typed text in one undo step; the text starts where the strokes did and is about
+// as tall per line as the handwriting was.
+export function strokesToText(
+  editor: Editor,
+  strokes: readonly StrokeItem[],
+  text: string,
+  measure: Measure,
+): TextItem | null {
+  const box = unite(strokes.map(shapeBox));
+  const first = strokes[0];
+  if (box === null || first === undefined || text.trim() === "") return null;
+  const lines = text.split("\n").length;
+  const fontSize = Math.round(Math.min(120, Math.max(14, box.height / lines / LINE_HEIGHT)));
+  const item = createItem<TextItem>({
+    type: "text",
+    x: box.x,
+    y: box.y,
+    color: first.color,
+    size: first.size,
+    text,
+    fontSize,
+    ...measure(text, fontSize),
+  });
+  editor.commit([...strokes.map((stroke) => updateItem(stroke, { deleted: true })), item]);
+  editor.setSelection([item.id]);
+  return item;
 }

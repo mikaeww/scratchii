@@ -13,5 +13,5 @@ the real check is noted in its commit, and its claims in `verification/` have me
 | 5 | `.scratchii` files, PNG/SVG/PDF export, library | done |
 | 6 | Desktop app with Tauri, install script, packages | done |
 | 7 | Self-hosted sync server and client | done |
-| 8 | Handwriting to text (experimental) | open |
+| 8 | Handwriting to text (experimental) | done |
 | 9 | Settings, German, accessibility pass, screenshots | open |

@@ -21,6 +21,7 @@ import { boardPanel } from "./ui/board-panel.ts";
 import { boardActions } from "./ui/library/actions.ts";
 import { mountContextMenu } from "./ui/menus/context-menu.ts";
 import { mountMarkPad } from "./ui/menus/mark-pad.ts";
+import { mountOcr } from "./ui/menus/ocr-dialog.ts";
 import { mountStage } from "./ui/stage.ts";
 import { stylePanel } from "./ui/style-panel.ts";
 import { mountTextEditor } from "./ui/text-editor.ts";
@@ -73,7 +74,7 @@ async function start(): Promise<void> {
   });
   const ink = readInk(document.documentElement);
   mountStage(canvas, editor, ink, tools);
-  mountContextMenu(canvas, editor, ink, mountMarkPad(editor, ink));
+  mountContextMenu(canvas, editor, ink, { pad: mountMarkPad(editor, ink), toText: mountOcr(editor) });
   const actions = boardActions(editor, ink, database);
   mountChrome(chrome, editor, canvas, boardPanel(editor, actions));
   chrome.append(stylePanel(editor));

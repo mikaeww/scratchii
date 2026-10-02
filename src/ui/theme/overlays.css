@@ -227,3 +227,11 @@
   display: grid;
   gap: var(--space-1);
 }
+
+.ocr-text {
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-hand);
+  font-size: var(--fs-title);
+  resize: vertical;
+}

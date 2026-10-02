@@ -5,7 +5,7 @@ import { deleteSelected, duplicateSelected, restack, selectAll } from "../../edi
 import type { Editor } from "../../editor/editor.ts";
 import { screenToWorld } from "../../editor/viewport.ts";
 import { itemAt } from "../../geometry/hit.ts";
-import { updateItem, type TextItem } from "../../model/item.ts";
+import { updateItem, type Item, type StrokeItem, type TextItem } from "../../model/item.ts";
 import type { Ink } from "../../render/ink.ts";
 import { text, type TextKey } from "../text.ts";
 import { attachMenuKeys } from "./menu-keys.ts";
@@ -119,7 +119,48 @@ function itemEntries(editor: Editor, done: () => void): HTMLElement[] {
   ];
 }
 
-export function mountContextMenu(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, pad: OpenPad): void {
+export interface MenuDialogs {
+  readonly pad: OpenPad;
+  readonly toText: (strokes: readonly StrokeItem[]) => void;
+}
+
+function entriesFor(
+  editor: Editor,
+  hit: Item | null,
+  ink: Ink,
+  dialogs: MenuDialogs,
+  close: () => void,
+): HTMLElement[] {
+  if (hit === null) {
+    return [
+      entry("menu.selectAll", () => {
+        selectAll(editor);
+        close();
+      }),
+    ];
+  }
+  const handwriting = editor
+    .selected()
+    .filter((item): item is StrokeItem => item.type === "stroke" && item.tip === "pen");
+  const toText =
+    handwriting.length === 0
+      ? []
+      : [
+          entry("menu.toText", () => {
+            close();
+            dialogs.toText(handwriting);
+          }),
+        ];
+  const forText = hit.type === "text" ? textEntries(editor, hit, ink, dialogs.pad, close) : [];
+  return [...forText, ...toText, ...itemEntries(editor, close)];
+}
+
+export function mountContextMenu(
+  canvas: HTMLCanvasElement,
+  editor: Editor,
+  ink: Ink,
+  dialogs: MenuDialogs,
+): void {
   const menu = document.createElement("div");
   menu.className = "menu";
   menu.setAttribute("role", "menu");
@@ -135,20 +176,9 @@ export function mountContextMenu(canvas: HTMLCanvasElement, editor: Editor, ink:
     const box = canvas.getBoundingClientRect();
     const world = screenToWorld(editor.view, [event.clientX - box.left, event.clientY - box.top]);
     const hit = itemAt(editor.scene(), world, REACH / editor.view.zoom);
-    if (hit !== null) editor.setSelection([hit.id]);
-    const entries =
-      hit === null
-        ? [
-            entry("menu.selectAll", () => {
-              selectAll(editor);
-              close();
-            }),
-          ]
-        : [
-            ...(hit.type === "text" ? textEntries(editor, hit, ink, pad, close) : []),
-            ...itemEntries(editor, close),
-          ];
-    menu.replaceChildren(...entries);
+    // Right-clicking inside a selection keeps it, so several strokes can be converted at once.
+    if (hit !== null && !editor.selection.has(hit.id)) editor.setSelection([hit.id]);
+    menu.replaceChildren(...entriesFor(editor, hit, ink, dialogs, close));
     menu.hidden = false;
     const left = Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8);
     const top = Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8);

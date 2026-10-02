@@ -78,6 +78,14 @@ here, pulls boards whose revision grew and merges them (`model/merge.ts`), then 
 grew since the last push. The open board takes remote changes through `Editor.applyRemote`, without an undo
 step. Rules and evidence: `docs/verification/sync.md`.
 
+## Handwriting to text
+
+Right-clicking selected pen strokes offers "Convert handwriting to text". `recognize/handwriting.ts` draws the
+strokes black on white and hands the picture to Tesseract (tesseract.js, LSTM only, English and German), which
+is loaded from `/ocr` on first use; `tools/ocr-assets.ts` copies engine and models there from `node_modules`
+before every dev start and build, so nothing is fetched from the net. The reading is shown for correction;
+"Replace strokes" runs `strokesToText`, one undo step.
+
 ## Versions
 
 Every change makes a new item object with `version + 1` and a fresh `nonce`. Undo and redo do not hand back old
