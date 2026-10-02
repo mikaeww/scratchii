@@ -8,6 +8,8 @@ src/geometry/         item shapes as SVG path data (freehand outline, later roug
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
 src/annotate/          marks: built-in presets, layout on text lines, own marks
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
+src/sync/             sync client, one sync round (Syncer), the 5 s loop, device sync settings
+server/               sync server: node:http + node:sqlite, serves dist/ too
 src/storage/          IndexedDB boards and thumbnails, the session (autosave, switching boards), library
                       search, browser file pick and download
 src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text
@@ -67,6 +69,14 @@ when `__TAURI_INTERNALS__` exists and falls back to a browser download otherwise
 which WebKitGTK keeps under `~/.local/share/dev.mikaeww.scratchii/` (ADR 0004). File drops are handled by the
 page, so the window disables Tauri's own drag and drop. The icon in `src-tauri/icons/` is a placeholder
 generated from `assets/icon-placeholder.svg` until the real one exists.
+
+## Sync
+
+`server/` keeps boards in SQLite and numbers every write with a revision. A device runs a round every five
+seconds when a server is set (`sync/loop.ts`): it saves pending edits, tells the server about boards deleted
+here, pulls boards whose revision grew and merges them (`model/merge.ts`), then pushes boards whose `updated`
+grew since the last push. The open board takes remote changes through `Editor.applyRemote`, without an undo
+step. Rules and evidence: `docs/verification/sync.md`.
 
 ## Versions
 

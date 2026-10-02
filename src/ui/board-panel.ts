@@ -1,6 +1,7 @@
 // The top-left panel: the board's title (editable), the library and the file menu.
 import type { Editor } from "../editor/editor.ts";
 import { icon } from "./icons.ts";
+import type { SyncStatus } from "../sync/loop.ts";
 import { attachMenuKeys } from "./menus/menu-keys.ts";
 import { text, type TextKey } from "./text.ts";
 
@@ -13,6 +14,33 @@ export interface FileActions {
   readonly exportSvg: () => void;
   readonly exportPdf: () => void;
   readonly library: () => void;
+  readonly settings: () => void;
+  readonly onSyncStatus: (listener: (status: SyncStatus) => void) => void;
+}
+
+const SYNC_LABEL: Readonly<Record<SyncStatus["kind"], TextKey>> = {
+  off: "sync.off",
+  syncing: "sync.syncing",
+  synced: "sync.synced",
+  offline: "sync.offline",
+  error: "sync.error",
+};
+
+function syncButton(actions: FileActions): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.className = "button icon sync-status";
+  const dot = document.createElement("span");
+  dot.className = "sync-dot";
+  dot.setAttribute("aria-hidden", "true");
+  button.append(icon("cloud"), dot);
+  button.addEventListener("click", actions.settings);
+  actions.onSyncStatus((status) => {
+    const detail = "message" in status ? ` ${status.message}` : "";
+    button.title = `${text(SYNC_LABEL[status.kind])}${detail} · ${text("settings.open")}`;
+    button.setAttribute("aria-label", button.title);
+    button.dataset.state = status.kind;
+  });
+  return button;
 }
 
 function titleInput(editor: Editor): HTMLInputElement {
@@ -65,7 +93,11 @@ function fileMenu(actions: FileActions): HTMLElement {
   return menu;
 }
 
-function iconButton(name: "library" | "file", label: TextKey, action: () => void): HTMLButtonElement {
+function iconButton(
+  name: "library" | "file" | "cloud",
+  label: TextKey,
+  action: () => void,
+): HTMLButtonElement {
   const button = document.createElement("button");
   button.className = "button icon";
   button.title = text(label);
@@ -99,6 +131,13 @@ export function boardPanel(editor: Editor, actions: FileActions): HTMLElement {
     menu.hidden = true;
     file.focus();
   });
-  panel.append(mark, titleInput(editor), iconButton("library", "board.library", actions.library), file, menu);
+  panel.append(
+    mark,
+    titleInput(editor),
+    iconButton("library", "board.library", actions.library),
+    file,
+    syncButton(actions),
+    menu,
+  );
   return panel;
 }

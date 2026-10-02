@@ -12,15 +12,28 @@
   box-shadow: var(--shadow-surface);
 }
 
-.panel.top {
+.top-row {
+  position: fixed;
   top: var(--space-4);
-  left: 50%;
-  translate: -50% 0;
+  left: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+  pointer-events: none;
+}
+
+.top-row > .panel {
+  position: relative;
+  pointer-events: auto;
+}
+
+.panel.top {
+  margin-inline: auto;
 }
 
 .panel.top-left {
-  top: var(--space-4);
-  left: var(--space-4);
   padding-inline: var(--space-3);
   height: calc(var(--ctl-h) + 2 * var(--space-1) + 2 * var(--line-strong));
 }
@@ -280,4 +293,32 @@
   border: var(--line) solid var(--ink);
   border-radius: var(--r-control);
   font-size: var(--fs-small);
+}
+
+.sync-status {
+  position: relative;
+}
+
+.sync-dot {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 9px;
+  height: 9px;
+  border: var(--line) solid var(--ink);
+  border-radius: 2px;
+  background: var(--paper);
+}
+
+.sync-status[data-state="synced"] .sync-dot {
+  background: var(--teal);
+}
+
+.sync-status[data-state="syncing"] .sync-dot {
+  background: var(--sun);
+}
+
+.sync-status[data-state="offline"] .sync-dot,
+.sync-status[data-state="error"] .sync-dot {
+  background: var(--coral);
 }

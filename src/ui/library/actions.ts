@@ -9,6 +9,9 @@ import { chooseFile, downloadFile, fileName } from "../../storage/disk.ts";
 import { importAs } from "../../storage/library.ts";
 import { listBoards, saveBoard, saveThumbnail } from "../../storage/local.ts";
 import { Session } from "../../storage/session.ts";
+import { readSyncSettings } from "../../sync/settings.ts";
+import { startSync, type SyncLoop, type SyncStatus } from "../../sync/loop.ts";
+import { mountSettings } from "../settings/settings.ts";
 import type { FileActions } from "../board-panel.ts";
 import { text, type TextKey } from "../text.ts";
 import { showToast } from "../toast.ts";
@@ -54,11 +57,31 @@ function fileOpener(database: IDBDatabase | null, open: Open): (file: File) => P
   };
 }
 
+function boardSync(editor: Editor, database: IDBDatabase, session: Session, create: () => void): SyncLoop {
+  const loop = startSync(
+    database,
+    {
+      id: () => editor.board.id,
+      apply: (board) => {
+        editor.applyRemote(board);
+      },
+      removed: () => {
+        showToast(text("sync.removedOpen"), "note");
+        create();
+      },
+    },
+    () => session.flush(),
+  );
+  loop.restart(readSyncSettings());
+  return loop;
+}
+
 function libraryOpener(
   editor: Editor,
   database: IDBDatabase | null,
   open: Open,
   create: () => void,
+  sync: SyncLoop | null,
 ): () => void {
   if (database === null) {
     return () => {
@@ -71,6 +94,12 @@ function libraryOpener(
     create,
     retagCurrent: (tags) => {
       editor.updateBoard({ tags });
+    },
+    deleted: (id) => {
+      sync?.deleted(id);
+    },
+    restored: (id) => {
+      sync?.restored(id);
     },
     onError: report("storage.saveFailed"),
   });
@@ -92,6 +121,7 @@ export function boardActions(editor: Editor, ink: Ink, database: IDBDatabase | n
     open(createBoard(text("board.untitled")));
   };
   const openFile = fileOpener(database, open);
+  const sync = database === null || session === null ? null : boardSync(editor, database, session, create);
   const exporting = (make: () => Promise<Blob>, extension: string) => (): void => {
     make()
       .then((blob) => downloadFile(fileName(editor.board.title, extension), blob))
@@ -114,6 +144,14 @@ export function boardActions(editor: Editor, ink: Ink, database: IDBDatabase | n
     exportPng: exporting(() => exportPng(editor.board.items, ink), ".png"),
     exportSvg: exporting(() => exportSvg(editor.board.items, ink), ".svg"),
     exportPdf: exporting(() => exportPdf(editor.board.items, ink), ".pdf"),
-    library: libraryOpener(editor, database, open, create),
+    library: libraryOpener(editor, database, open, create, sync),
+    settings: mountSettings((settings) => {
+      if (sync === null) showToast(text("storage.unavailable"), "error");
+      else sync.restart(settings);
+    }),
+    onSyncStatus: (listener: (status: SyncStatus) => void) => {
+      if (sync === null) listener({ kind: "off" });
+      else sync.onStatus(listener);
+    },
   };
 }

@@ -1,14 +1,16 @@
 // The editing session of one board: items, viewport, tool and style, selection, the draft being drawn, undo.
 // Not here: input handling (input.ts, tools/), drawing (src/render) or storage (src/storage).
 import type { Box } from "../geometry/box.ts";
-import { putItems, withItems, type Board } from "../model/board.ts";
+import { mergeBoards } from "../model/merge.ts";
+import { nextUpdate, putItems, withItems, type Board } from "../model/board.ts";
 import { updateItem, type Color, type Item, type Size } from "../model/item.ts";
 import { History } from "./history.ts";
 import type { Viewport } from "./viewport.ts";
 
 export type ToolName =
   "select" | "hand" | "pen" | "marker" | "rect" | "ellipse" | "line" | "arrow" | "text" | "note" | "eraser";
-export type Change = "board" | "meta" | "items" | "view" | "tool" | "style" | "draft" | "selection";
+export type Change =
+  "board" | "meta" | "items" | "remote" | "view" | "tool" | "style" | "draft" | "selection";
 
 export interface Style {
   readonly color: Color;
@@ -112,8 +114,16 @@ export class Editor {
 
   // Title and tags; they are part of the board, not of any item.
   updateBoard(meta: Partial<Pick<Board, "title" | "tags">>): void {
-    this.board = { ...this.board, ...meta, updated: Date.now() };
+    const now = nextUpdate(this.board);
+    this.board = { ...this.board, ...meta, updated: now, metaUpdated: now };
     this.emit("meta");
+  }
+
+  // Folds a copy from the sync server into the open board without an undo step; the merge keeps every newer
+  // local edit, and `updated` does not move, so the result is not pushed straight back.
+  applyRemote(remote: Board): void {
+    this.board = mergeBoards(this.board, remote);
+    this.emit("remote");
   }
 
   setView(view: Viewport): void {

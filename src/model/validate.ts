@@ -233,13 +233,14 @@ export function validateItem(value: unknown, path: string): Item {
 }
 
 export function validateBoard(value: unknown, path = "board"): Board {
-  const fields = record(value, path, ["id", "title", "tags", "created", "updated", "items"]);
+  const fields = record(value, path, ["id", "title", "tags", "created", "updated", "metaUpdated", "items"]);
   return {
     id: text(fields.id, `${path}.id`),
     title: text(fields.title, `${path}.title`),
     tags: list(fields.tags, `${path}.tags`, text, 100),
     created: integer(fields.created, `${path}.created`),
     updated: integer(fields.updated, `${path}.updated`),
+    metaUpdated: integer(fields.metaUpdated, `${path}.metaUpdated`),
     items: list(fields.items, `${path}.items`, validateItem),
   };
 }

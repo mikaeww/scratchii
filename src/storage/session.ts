@@ -64,7 +64,7 @@ export class Session {
     this.editor = editor;
     this.hooks = hooks;
     editor.on((change) => {
-      if (change !== "items" && change !== "meta") return;
+      if (change !== "items" && change !== "meta" && change !== "remote") return;
       this.pending = editor.board;
       if (this.timer !== null) clearTimeout(this.timer);
       this.timer = setTimeout(() => void this.flush(), DELAY_MS);

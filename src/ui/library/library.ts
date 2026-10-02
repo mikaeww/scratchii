@@ -1,5 +1,5 @@
 // The library dialog: every board as a card with thumbnail, title, tags and age; search, open, delete.
-import type { Board } from "../../model/board.ts";
+import { nextUpdate, type Board } from "../../model/board.ts";
 import { deleteBoard, listBoards, loadThumbnail, saveBoard, saveThumbnail } from "../../storage/local.ts";
 import { parseTags, search, summarise, type Summary } from "../../storage/library.ts";
 import { icon } from "../icons.ts";
@@ -12,6 +12,9 @@ export interface LibraryHooks {
   readonly create: () => void;
   // The open board's tags go through the editor, or the next autosave would overwrite them.
   readonly retagCurrent: (tags: string[]) => void;
+  // Sync needs to hear about deletions made here, and about undoing them.
+  readonly deleted: (id: string) => void;
+  readonly restored: (id: string) => void;
   readonly onError: (error: unknown) => void;
 }
 
@@ -126,16 +129,25 @@ function cardActions(
     isOpen: (board) => board.id === hooks.currentId(),
     retag: (board, tags) => {
       if (board.id === hooks.currentId()) hooks.retagCurrent(tags);
-      else saveBoard(database, { ...board, tags, updated: Date.now() }).then(refresh, hooks.onError);
+      else
+        saveBoard(database, { ...board, tags, updated: Date.now(), metaUpdated: Date.now() }).then(
+          refresh,
+          hooks.onError,
+        );
     },
     remove: (board, thumbnail) => {
       deleteBoard(database, board.id).then(refresh, hooks.onError);
+      hooks.deleted(board.id);
       showToast(text("library.deleted"), "note", {
         label: text("toast.undo"),
         run: () => {
-          saveBoard(database, board)
+          // A newer `updated` lets the restored copy revive the board if sync already reported the deletion.
+          saveBoard(database, { ...board, updated: nextUpdate(board) })
             .then(() => (thumbnail === null ? undefined : saveThumbnail(database, board.id, thumbnail)))
-            .then(refresh, hooks.onError);
+            .then(() => {
+              hooks.restored(board.id);
+              refresh();
+            }, hooks.onError);
         },
       });
     },

@@ -6,6 +6,7 @@ import { validateBoard } from "../model/validate.ts";
 const DATABASE = "scratchii";
 const STORE = "boards";
 const THUMBNAILS = "thumbnails";
+const SYNC = "sync";
 
 export class StorageError extends Error {
   constructor(operation: string, cause: unknown) {
@@ -28,10 +29,11 @@ function settle<T>(request: IDBRequest<T>, operation: string): Promise<T> {
 }
 
 export async function openBoards(): Promise<IDBDatabase> {
-  const request = indexedDB.open(DATABASE, 2);
+  const request = indexedDB.open(DATABASE, 3);
   request.onupgradeneeded = (event) => {
     if (event.oldVersion < 1) request.result.createObjectStore(STORE, { keyPath: "id" });
     if (event.oldVersion < 2) request.result.createObjectStore(THUMBNAILS);
+    if (event.oldVersion < 3) request.result.createObjectStore(SYNC);
   };
   return settle(request, "open");
 }
@@ -81,4 +83,38 @@ export async function loadThumbnail(database: IDBDatabase, id: string): Promise<
   const store = database.transaction(THUMBNAILS, "readonly").objectStore(THUMBNAILS);
   const value: unknown = await settle(store.get(id), `load thumbnail ${id}`);
   return typeof value === "string" && value.startsWith("data:image/png;base64,") ? value : null;
+}
+
+export interface SyncMark {
+  readonly pushed: number;
+  readonly seen: number;
+  readonly deleting: boolean;
+}
+
+function isMark(value: unknown): value is SyncMark {
+  const mark = value as Partial<SyncMark> | null;
+  return (
+    typeof mark?.pushed === "number" && typeof mark.seen === "number" && typeof mark.deleting === "boolean"
+  );
+}
+
+export async function loadSyncMarks(database: IDBDatabase): Promise<Map<string, SyncMark>> {
+  const store = database.transaction(SYNC, "readonly").objectStore(SYNC);
+  const [keys, values] = await Promise.all([
+    settle(store.getAllKeys(), "sync keys"),
+    settle(store.getAll(), "sync marks"),
+  ]);
+  const marks = new Map<string, SyncMark>();
+  keys.forEach((key, index) => {
+    const value: unknown = values[index];
+    // A malformed mark only costs one extra upload; it is dropped rather than trusted.
+    if (typeof key === "string" && isMark(value)) marks.set(key, value);
+  });
+  return marks;
+}
+
+export async function saveSyncMark(database: IDBDatabase, id: string, mark: SyncMark | null): Promise<void> {
+  const store = database.transaction(SYNC, "readwrite").objectStore(SYNC);
+  if (mark === null) await settle(store.delete(id), `forget sync mark ${id}`);
+  else await settle(store.put(mark, id), `sync mark ${id}`);
 }

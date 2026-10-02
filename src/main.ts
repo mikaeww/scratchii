@@ -74,9 +74,9 @@ async function start(): Promise<void> {
   const ink = readInk(document.documentElement);
   mountStage(canvas, editor, ink, tools);
   mountContextMenu(canvas, editor, ink, mountMarkPad(editor, ink));
-  mountChrome(chrome, editor, canvas);
   const actions = boardActions(editor, ink, database);
-  chrome.append(stylePanel(editor), boardPanel(editor, actions));
+  mountChrome(chrome, editor, canvas, boardPanel(editor, actions));
+  chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {
     onBoardFile: actions.openFile,
     onError: (error) => {

@@ -218,3 +218,12 @@
   border-radius: var(--r-control);
   font-size: var(--fs-small);
 }
+
+.settings {
+  width: min(520px, 92vw);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+}

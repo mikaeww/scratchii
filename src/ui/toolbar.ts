@@ -114,6 +114,15 @@ function zoomPanel(editor: Editor, canvas: HTMLCanvasElement): HTMLElement {
   return element;
 }
 
-export function mountChrome(root: HTMLElement, editor: Editor, canvas: HTMLCanvasElement): void {
-  root.append(toolPanel(editor), historyPanel(editor), zoomPanel(editor, canvas));
+// `leading` (the board panel) shares the top row with the tools, so the two never overlap however wide it is.
+export function mountChrome(
+  root: HTMLElement,
+  editor: Editor,
+  canvas: HTMLCanvasElement,
+  leading: HTMLElement,
+): void {
+  const row = document.createElement("div");
+  row.className = "top-row";
+  row.append(leading, toolPanel(editor));
+  root.append(row, historyPanel(editor), zoomPanel(editor, canvas));
 }
