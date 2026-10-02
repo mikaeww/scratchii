@@ -1,6 +1,7 @@
 // Wires the app together: storage, editor, tools, input, canvas and chrome. No logic of its own.
 import "./ui/theme/tokens.css";
 import "./ui/theme/controls.css";
+import "./ui/theme/overlays.css";
 import { Editor } from "./editor/editor.ts";
 import { attachInput, type Tools } from "./editor/input.ts";
 import { createEraser } from "./editor/tools/eraser.ts";
@@ -13,8 +14,11 @@ import { createTextTool, editAt, newText, type TextEditing } from "./editor/tool
 import { createBoard } from "./model/board.ts";
 import { readInk } from "./render/ink.ts";
 import { lineBoxes } from "./render/marks.ts";
-import { keepSaved, openLastBoard } from "./storage/autosave.ts";
+import { attachDrop } from "./editor/drop.ts";
+import { openLastBoard } from "./storage/session.ts";
 import { openBoards } from "./storage/local.ts";
+import { boardPanel } from "./ui/board-panel.ts";
+import { boardActions } from "./ui/library/actions.ts";
 import { mountContextMenu } from "./ui/menus/context-menu.ts";
 import { mountMarkPad } from "./ui/menus/mark-pad.ts";
 import { mountStage } from "./ui/stage.ts";
@@ -71,13 +75,15 @@ async function start(): Promise<void> {
   mountStage(canvas, editor, ink, tools);
   mountContextMenu(canvas, editor, ink, mountMarkPad(editor, ink));
   mountChrome(chrome, editor, canvas);
-  chrome.append(stylePanel(editor));
-  if (database !== null) {
-    keepSaved(database, editor, (error) => {
+  const actions = boardActions(editor, ink, database);
+  chrome.append(stylePanel(editor), boardPanel(editor, actions));
+  attachDrop(canvas, editor, {
+    onBoardFile: actions.openFile,
+    onError: (error) => {
       console.error(error);
-      showToast(text("storage.saveFailed"), "error");
-    });
-  }
+      showToast(`${text("image.failed")} ${error instanceof Error ? error.message : String(error)}`, "error");
+    },
+  });
 }
 
 await document.fonts.load('16px "Shantell Sans"');

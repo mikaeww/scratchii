@@ -7,6 +7,7 @@ import {
   SIZES,
   createItem,
   type Color,
+  type ImageItem,
   type Item,
   type ItemType,
   type LineItem,
@@ -76,6 +77,14 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
       height: between(random, 1, 300),
     }),
   mark: (random) => randomMark(random, crypto.randomUUID()),
+  image: (random) =>
+    createItem<ImageItem>({
+      ...base(random),
+      type: "image",
+      width: between(random, 1, 800),
+      height: between(random, 1, 800),
+      src: "data:image/png;base64,iVBORw0KGgo=",
+    }),
   note: (random) =>
     createItem<NoteItem>({
       ...base(random),

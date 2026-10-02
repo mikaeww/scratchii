@@ -85,7 +85,15 @@ export interface MarkItem extends ItemBase {
   readonly strokes: readonly MarkStroke[];
 }
 
-export type Item = StrokeItem | ShapeItem | LineItem | TextItem | NoteItem | MarkItem;
+// A pasted or dropped picture, kept inside the board as a data URL so a board file is complete on its own.
+export interface ImageItem extends ItemBase {
+  readonly type: "image";
+  readonly width: number;
+  readonly height: number;
+  readonly src: string;
+}
+
+export type Item = StrokeItem | ShapeItem | LineItem | TextItem | NoteItem | MarkItem | ImageItem;
 export type ItemType = Item["type"];
 export const ITEM_TYPES: readonly ItemType[] = [
   "stroke",
@@ -96,6 +104,7 @@ export const ITEM_TYPES: readonly ItemType[] = [
   "text",
   "note",
   "mark",
+  "image",
 ];
 
 type Fresh<T extends Item> = Omit<T, "id" | "seed" | "version" | "nonce" | "deleted" | "updated">;

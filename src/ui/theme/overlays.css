@@ -1,0 +1,220 @@
+/* Menus, dialogs and the library. Values only from tokens.css. */
+.menu {
+  position: fixed;
+  z-index: 10;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 200px;
+  padding: var(--space-2);
+  background: var(--paper);
+  border: var(--line-strong) solid var(--ink);
+  border-radius: var(--r-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.menu .label {
+  padding: var(--space-1) var(--space-2);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  height: var(--ctl-h);
+  padding-inline: var(--space-2);
+  background: transparent;
+  border: var(--line) solid transparent;
+  border-radius: var(--r-control);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--cream);
+  border-color: var(--ink);
+  outline: 0;
+}
+
+.menu-divider {
+  width: 100%;
+  height: var(--line);
+  margin: var(--space-1) 0;
+  background: var(--ink);
+  border: 0;
+}
+
+.mark-grid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: var(--space-2);
+  padding: var(--space-1);
+}
+
+.mark-option {
+  display: grid;
+  place-items: center;
+  padding: var(--space-1);
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-control);
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease-out,
+    box-shadow var(--motion-fast) ease-out;
+}
+
+.mark-option:hover {
+  background: var(--cream);
+}
+
+.mark-option:active {
+  transform: var(--press);
+  box-shadow: var(--shadow-pressed);
+}
+
+.dialog {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line-strong) solid var(--ink);
+  border-radius: var(--r-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: var(--fs-head);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dialog-hint {
+  margin: 0;
+  font-size: var(--fs-small);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.button.primary {
+  background: var(--sun);
+}
+
+.pad {
+  width: 520px;
+  height: 200px;
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+.library {
+  width: min(960px, 92vw);
+  max-height: 86vh;
+  overflow: auto;
+}
+
+.library-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.library-header .dialog-title {
+  margin-right: auto;
+}
+
+.library-header .input {
+  width: min(320px, 40vw);
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-1) var(--space-2) var(--space-2) var(--space-1);
+}
+
+.board-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-surface);
+  box-shadow: var(--shadow-control);
+}
+
+.board-open {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.board-thumb {
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  object-fit: contain;
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+}
+
+.board-name {
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+
+.board-age {
+  font-size: var(--fs-micro);
+}
+
+.board-footer {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.board-tags {
+  flex: 1;
+  min-width: 0;
+  height: var(--ctl-h);
+  padding-inline: var(--space-2);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-control);
+  font-size: var(--fs-small);
+}

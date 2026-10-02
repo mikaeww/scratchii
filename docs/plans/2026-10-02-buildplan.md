@@ -107,8 +107,8 @@ to 0003), check tooling: `tools/check.ts` (prettier, eslint, tsc, structure, tes
 ### Phase 5 — files, export, library
 
 - `.scratchii` files (JSON, versioned, validated on load with the location of every error).
-- Export PNG (canvas), SVG (same path list), PDF (one page, the PNG embedded, written by an own small PDF
-  writer using `CompressionStream`).
+- Export PNG (canvas), SVG (same path list), PDF (one page, a JPEG embedded as is, written by an own small
+  PDF writer; changed from a deflated PNG during phase 5 because PDF takes JPEG without any encoding step).
 - Paste images and drop files onto the canvas.
 - Library view: grid of boards with thumbnails, search over title and text, tags, rename, delete with undo.
 

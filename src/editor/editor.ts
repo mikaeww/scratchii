@@ -8,7 +8,7 @@ import type { Viewport } from "./viewport.ts";
 
 export type ToolName =
   "select" | "hand" | "pen" | "marker" | "rect" | "ellipse" | "line" | "arrow" | "text" | "note" | "eraser";
-export type Change = "board" | "items" | "view" | "tool" | "style" | "draft" | "selection";
+export type Change = "board" | "meta" | "items" | "view" | "tool" | "style" | "draft" | "selection";
 
 export interface Style {
   readonly color: Color;
@@ -60,6 +60,7 @@ export class Editor {
 
   load(board: Board): void {
     this.board = board;
+    this.view = { x: 0, y: 0, zoom: 1 };
     this.draft = [];
     this.selection = new Set();
     this.history.reset(board.items);
@@ -107,6 +108,12 @@ export class Editor {
     if (!this.canRedo) return;
     this.board = withItems(this.board, restore(this.board.items, this.history.redo()));
     this.emit("items");
+  }
+
+  // Title and tags; they are part of the board, not of any item.
+  updateBoard(meta: Partial<Pick<Board, "title" | "tags">>): void {
+    this.board = { ...this.board, ...meta, updated: Date.now() };
+    this.emit("meta");
   }
 
   setView(view: Viewport): void {

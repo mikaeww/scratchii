@@ -27,7 +27,14 @@ export interface TextOp {
   readonly color: Color;
 }
 
-export type DrawOp = PathOp | TextOp;
+export interface ImageOp {
+  readonly kind: "image";
+  readonly src: string;
+  readonly width: number;
+  readonly height: number;
+}
+
+export type DrawOp = PathOp | TextOp | ImageOp;
 
 const cache = new WeakMap<Item, readonly DrawOp[]>();
 // Highlighter ink lets what is underneath show through; marks behind text use the same value.
@@ -112,6 +119,8 @@ function build(item: Item): readonly DrawOp[] {
     }
     case "note":
       return noteOps(item);
+    case "image":
+      return [{ kind: "image", src: item.src, width: item.width, height: item.height }];
     // Marks depend on their target and are drawn by render/marks.ts.
     case "mark":
       return [];

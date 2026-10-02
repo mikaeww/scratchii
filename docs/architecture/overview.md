@@ -8,7 +8,8 @@ src/geometry/         item shapes as SVG path data (freehand outline, later roug
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
 src/annotate/          marks: built-in presets, layout on text lines, own marks
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
-src/storage/          IndexedDB boards, autosave and the last open board
+src/storage/          IndexedDB boards and thumbnails, the session (autosave, switching boards), library
+                      search, browser file pick and download
 src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text
 ```
 
@@ -48,6 +49,15 @@ stroke so far goes to `recognize/shapes.ts` and, if it is a line, arrow, box or 
 shape and is committed on lift. The marker tool hands its finished stroke and the measured lines of every text
 in the scene to `recognize/highlight.ts`; a hit becomes a mark behind the text, otherwise the stroke stays a
 translucent marker stroke.
+
+## Files and the library
+
+A `.scratchii` file is `{ format, version, board }` (`model/file.ts`), validated like every other input. An
+opened file whose board id already exists becomes a copy with a new id, so nothing stored is overwritten.
+Exports draw from the same paint steps as the canvas (`render/order.ts`): PNG from an offscreen canvas at 2×,
+PDF as that picture in JPEG inside a one-page PDF (`render/export/pdf.ts`), SVG as paths with the
+handwriting font embedded. `storage/session.ts` saves 400 ms after a change and flushes before switching
+boards; thumbnails are rendered three seconds after the last save of each board.
 
 ## Versions
 

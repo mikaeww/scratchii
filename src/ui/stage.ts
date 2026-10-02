@@ -25,7 +25,7 @@ export function mountStage(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, 
       height: canvas.clientHeight,
       ratio: window.devicePixelRatio,
     };
-    drawScene(context, scene, ink);
+    drawScene(context, scene, ink, request);
     drawOverlay(context, editor, ink, scene.ratio);
   };
   const request = (): void => {

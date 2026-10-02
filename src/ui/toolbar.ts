@@ -1,4 +1,4 @@
-// The floating chrome around the canvas: brand, tools, undo and redo, zoom. Plain DOM, wired to the editor.
+// The floating chrome around the canvas: tools, undo and redo, zoom. Plain DOM, wired to the editor.
 import type { Editor, ToolName } from "../editor/editor.ts";
 import { zoomAt } from "../editor/viewport.ts";
 import { icon, type IconName } from "./icons.ts";
@@ -26,19 +26,6 @@ function divider(): HTMLElement {
   const element = document.createElement("span");
   element.className = "divider";
   element.setAttribute("aria-hidden", "true");
-  return element;
-}
-
-function brand(): HTMLElement {
-  const element = panel("top-left");
-  const mark = document.createElement("span");
-  mark.className = "brand-mark";
-  mark.textContent = "S";
-  mark.setAttribute("aria-hidden", "true");
-  const name = document.createElement("span");
-  name.className = "brand";
-  name.textContent = text("app.name");
-  element.append(mark, name);
   return element;
 }
 
@@ -128,5 +115,5 @@ function zoomPanel(editor: Editor, canvas: HTMLCanvasElement): HTMLElement {
 }
 
 export function mountChrome(root: HTMLElement, editor: Editor, canvas: HTMLCanvasElement): void {
-  root.append(brand(), toolPanel(editor), historyPanel(editor), zoomPanel(editor, canvas));
+  root.append(toolPanel(editor), historyPanel(editor), zoomPanel(editor, canvas));
 }

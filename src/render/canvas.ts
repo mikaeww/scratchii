@@ -1,10 +1,11 @@
 // Draws a list of items onto a 2D canvas for a given viewport. Not here: when to draw (src/ui/stage.ts).
 import type { Viewport } from "../editor/viewport.ts";
-import type { Item, MarkItem } from "../model/item.ts";
+import type { Item } from "../model/item.ts";
+import { imageFor } from "./images.ts";
 import type { Ink } from "./ink.ts";
-import { markOps } from "./marks.ts";
 import { handFont } from "./measure.ts";
-import { opsFor, type PathOp, type TextOp } from "./ops.ts";
+import type { ImageOp, PathOp, TextOp } from "./ops.ts";
+import { paintOrder, type PaintStep } from "./order.ts";
 
 const paths = new WeakMap<PathOp, Path2D>();
 
@@ -43,36 +44,27 @@ function paint(context: CanvasRenderingContext2D, op: PathOp, ink: Ink, color: s
   context.globalAlpha = 1;
 }
 
-function drawItem(context: CanvasRenderingContext2D, item: Item, ink: Ink): void {
+function drawImage(context: CanvasRenderingContext2D, op: ImageOp, onImage: () => void): void {
+  const image = imageFor(op.src, onImage);
+  if (image !== null) context.drawImage(image, 0, 0, op.width, op.height);
+}
+
+function drawStep(context: CanvasRenderingContext2D, step: PaintStep, ink: Ink, onImage: () => void): void {
   context.save();
-  context.translate(item.x, item.y);
-  const ops = opsFor(item);
-  for (const op of ops) {
+  context.translate(step.origin[0], step.origin[1]);
+  for (const op of step.ops) {
     if (op.kind !== "path" || !op.shadow) continue;
     context.save();
     context.translate(ink.shadow[0], ink.shadow[1]);
     paint(context, op, ink, ink.colors.ink);
     context.restore();
   }
-  for (const op of ops) {
+  for (const op of step.ops) {
     if (op.kind === "path") paint(context, op, ink, null);
-    else write(context, op, ink);
+    else if (op.kind === "text") write(context, op, ink);
+    else drawImage(context, op, onImage);
   }
   context.restore();
-}
-
-function drawMarks(
-  context: CanvasRenderingContext2D,
-  marks: readonly MarkItem[],
-  target: Item,
-  layer: MarkItem["layer"],
-  ink: Ink,
-): void {
-  if (target.type !== "text") return;
-  for (const mark of marks) {
-    if (mark.layer !== layer) continue;
-    for (const op of markOps(mark, target)) paint(context, op, ink, null);
-  }
 }
 
 export interface Scene {
@@ -84,7 +76,13 @@ export interface Scene {
   readonly ratio: number;
 }
 
-export function drawScene(context: CanvasRenderingContext2D, scene: Scene, ink: Ink): void {
+// onImage is called when a picture that was still decoding becomes ready, so the caller can draw again.
+export function drawScene(
+  context: CanvasRenderingContext2D,
+  scene: Scene,
+  ink: Ink,
+  onImage = (): void => undefined,
+): void {
   const { view, ratio } = scene;
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.fillStyle = ink.canvas;
@@ -97,16 +95,5 @@ export function drawScene(context: CanvasRenderingContext2D, scene: Scene, ink: 
     -view.x * view.zoom * ratio,
     -view.y * view.zoom * ratio,
   );
-  const marks = new Map<string, MarkItem[]>();
-  for (const item of scene.items) {
-    if (item.type === "mark" && !item.deleted)
-      marks.set(item.target, [...(marks.get(item.target) ?? []), item]);
-  }
-  for (const item of scene.items) {
-    if (item.deleted || item.type === "mark") continue;
-    const own = item.type === "text" ? (marks.get(item.id) ?? []) : [];
-    drawMarks(context, own, item, "behind", ink);
-    drawItem(context, item, ink);
-    drawMarks(context, own, item, "over", ink);
-  }
+  for (const step of paintOrder(scene.items)) drawStep(context, step, ink, onImage);
 }

@@ -26,6 +26,9 @@ export class ValidationError extends Error {
 }
 
 const MAX_TEXT = 100_000;
+// Pictures are re-encoded to at most 2048 px on import; this bounds what a file may still carry.
+const MAX_IMAGE = 16_000_000;
+const IMAGE_URL = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
 const MAX_POINTS = 100_000;
 
 type Fields = Record<string, unknown>;
@@ -144,6 +147,13 @@ function lineRange(value: unknown, path: string): MarkItem["lines"] {
   return [first, last];
 }
 
+function imageSource(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.length > MAX_IMAGE || !IMAGE_URL.test(value)) {
+    throw new ValidationError(path, "expected a base64 PNG, JPEG, WebP or GIF data URL");
+  }
+  return value;
+}
+
 function nullableColor(value: unknown, path: string): Color | null {
   return value === null ? null : oneOf(value, path, COLORS);
 }
@@ -172,6 +182,15 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
       fontSize: positive(f.fontSize, `${p}.fontSize`),
       width: positive(f.width, `${p}.width`),
       height: positive(f.height, `${p}.height`),
+    }),
+  ],
+  image: [
+    ["width", "height", "src"],
+    (f, p) => ({
+      type: "image",
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+      src: imageSource(f.src, `${p}.src`),
     }),
   ],
   mark: [

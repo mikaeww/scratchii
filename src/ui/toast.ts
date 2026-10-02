@@ -12,13 +12,28 @@ function container(): HTMLElement {
   return created;
 }
 
-export function showToast(message: string, kind: "note" | "error"): void {
+export interface ToastAction {
+  readonly label: string;
+  readonly run: () => void;
+}
+
+export function showToast(message: string, kind: "note" | "error", action?: ToastAction): void {
   const toast = document.createElement("div");
   toast.className = `toast ${kind}`;
   toast.setAttribute("role", kind === "error" ? "alert" : "status");
   const label = document.createElement("span");
   label.textContent = message;
   toast.append(label);
+  if (action !== undefined) {
+    const button = document.createElement("button");
+    button.className = "button";
+    button.textContent = action.label;
+    button.addEventListener("click", () => {
+      toast.remove();
+      action.run();
+    });
+    toast.append(button);
+  }
   if (kind === "error") {
     const close = document.createElement("button");
     close.className = "button";
