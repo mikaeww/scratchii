@@ -29,6 +29,9 @@ import { mountTextEditor } from "./ui/text-editor.ts";
 import { activeLanguage, text } from "./ui/text.ts";
 import { showToast } from "./ui/toast.ts";
 import { mountChrome } from "./ui/toolbar.ts";
+import { paletteCommands } from "./ui/palette/commands.ts";
+import { mountPalette } from "./ui/palette/palette.ts";
+import { screenToWorld, type Vec } from "./editor/viewport.ts";
 
 function required<T extends HTMLElement>(selector: string, type: new () => T): T {
   const element = document.querySelector(selector);
@@ -82,7 +85,9 @@ async function start(): Promise<void> {
   const stage = mountStage(canvas, editor, ink, tools);
   mountContextMenu(canvas, editor, ink, { pad: mountMarkPad(editor, ink), toText: mountOcr(editor) });
   const actions = boardActions(editor, ink, database, stage);
-  mountChrome(chrome, editor, canvas, boardPanel(editor, actions));
+  const centre = (): Vec => screenToWorld(editor.view, [canvas.clientWidth / 2, canvas.clientHeight / 2]);
+  const openPalette = mountPalette(() => paletteCommands({ editor, centre }));
+  mountChrome(chrome, editor, canvas, boardPanel(editor, actions, openPalette));
   chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {
     onBoardFile: actions.openFile,

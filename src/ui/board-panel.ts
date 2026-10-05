@@ -94,7 +94,7 @@ function fileMenu(actions: FileActions): HTMLElement {
 }
 
 function iconButton(
-  name: "library" | "file" | "cloud",
+  name: "library" | "file" | "cloud" | "command",
   label: TextKey,
   action: () => void,
 ): HTMLButtonElement {
@@ -107,7 +107,7 @@ function iconButton(
   return button;
 }
 
-export function boardPanel(editor: Editor, actions: FileActions): HTMLElement {
+export function boardPanel(editor: Editor, actions: FileActions, openPalette: () => void): HTMLElement {
   const panel = document.createElement("div");
   panel.className = "panel top-left";
   const mark = document.createElement("span");
@@ -134,6 +134,7 @@ export function boardPanel(editor: Editor, actions: FileActions): HTMLElement {
   panel.append(
     mark,
     titleInput(editor),
+    iconButton("command", "board.palette", openPalette),
     iconButton("library", "board.library", actions.library),
     file,
     syncButton(actions),

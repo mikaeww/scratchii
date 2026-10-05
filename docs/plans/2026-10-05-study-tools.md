@@ -38,12 +38,13 @@ Not in this plan: live links between a table and its chart, sequence diagrams, h
 | Step | Code | Notes |
 |---|---|---|
 | 1 | `src/calc/` expression parser and evaluator, subnet, conversions; `=` in the text editor | No dependency |
-| 2 | `graph` and `chart` items, `src/calc/plot.ts` (sampling, ticks), `src/render/charts.ts`, edit dialog | |
-| 3 | `table` item, `src/table/` (layout, cell hit, TSV), cell editing in the text editor, menu entries | |
-| 4 | `label` on shapes, polygons and lines, `ends` on lines, `src/diagram/connect.ts`; the editor reroutes attached lines on every draft and commit | ADR 0007 |
-| 5 | `src/diagram/flowchart.ts` (parser), `layout.ts`, `build.ts`, dialog and building blocks | |
-| 6 | `src/ui/palette/`, `src/templates/`, paper backgrounds in preferences and settings | |
-| 7 | `src/import/pdf.ts` with pdf.js, loaded only when a PDF arrives | ADR 0006 |
+| 2 | `src/ui/palette/`: Ctrl+K, ranking with arguments, tool commands; later steps add theirs | Moved up: every later step needs a way to insert its items |
+| 3 | `graph` and `chart` items, `src/calc/plot.ts` (sampling, ticks), `src/render/charts.ts`, edit dialog | |
+| 4 | `table` item, `src/table/` (layout, cell hit, TSV), cell editing in the text editor, menu entries | |
+| 5 | `label` on shapes, polygons and lines, `ends` on lines, `src/diagram/connect.ts`; the editor reroutes attached lines on every draft and commit | ADR 0007 |
+| 6 | `src/diagram/flowchart.ts` (parser), `layout.ts`, `build.ts`, dialog and building blocks | |
+| 7 | `src/templates/`, paper backgrounds in preferences and settings | |
+| 8 | `src/import/pdf.ts` with pdf.js, loaded only when a PDF arrives | ADR 0006 |
 
 The item model grows by `table`, `graph` and `chart`, and by the fields `label` and `ends` (ADR 0007). Files
 written before keep loading: the new fields are optional when read and default to empty.

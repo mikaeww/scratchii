@@ -85,6 +85,7 @@ request.
 
 | Key | Action |
 | --- | --- |
+| Ctrl+K | command palette: every tool and command by name, with arguments (`table 3x4`) |
 | V, H, P, M | select, hand, pen, marker |
 | R, O, 3, D, S | box, ellipse, triangle, diamond, star |
 | A, L | arrow, line |

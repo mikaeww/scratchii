@@ -13,7 +13,8 @@ src/sync/             sync client, one sync round (Syncer), the 5 s loop, device
 server/               sync server: node:http + node:sqlite, serves dist/ too
 src/storage/          IndexedDB boards and thumbnails, the session (autosave, switching boards), library
                       search, browser file pick and download
-src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text
+src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text,
+                      palette/ (Ctrl+K: the command list and its ranking)
 ```
 
 ## Data flow

@@ -126,6 +126,10 @@ export const ENGLISH = {
   "pad.guide": "Scratchii",
   "pad.unsaved":
     "The mark was applied but could not be kept for next time: this browser blocks local storage.",
+  "board.palette": "Commands (Ctrl+K)",
+  "palette.title": "Commands",
+  "palette.placeholder": "Type a command, e.g. table 3x4",
+  "palette.none": "Nothing matches.",
   "calc.network": "Network",
   "calc.broadcast": "Broadcast",
   "calc.mask": "Mask",

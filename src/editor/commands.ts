@@ -13,6 +13,7 @@ import {
 } from "../model/item.ts";
 import { validateItem } from "../model/validate.ts";
 import type { Editor, Style } from "./editor.ts";
+import type { Vec } from "./viewport.ts";
 
 const DUPLICATE_OFFSET = 24;
 const CLIPBOARD_FORMAT = "scratchii/items";
@@ -35,6 +36,17 @@ function copies(items: readonly Item[], dx: number, dy: number): Item[] {
     } = moveItem(item, dx, dy);
     return createItem(fields as Parameters<typeof createItem>[0]);
   });
+}
+
+// New things (a table, a graph, a whole diagram) land centred on `at` in one undo step, selected.
+export function insertAt(editor: Editor, items: readonly Item[], at: Vec): void {
+  const box = unite(items.map(shapeBox));
+  if (box === null) return;
+  const dx = at[0] - (box.x + box.width / 2);
+  const dy = at[1] - (box.y + box.height / 2);
+  const placed = items.map((item) => moveItem(item, dx, dy));
+  editor.commit(placed);
+  editor.setSelection(placed.map((item) => item.id));
 }
 
 export function duplicateSelected(editor: Editor): void {

@@ -224,6 +224,10 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   recognise,
   shapes,
   calc,
+  palette: async (page) => {
+    await page.keyboard.press("Control+k");
+    await page.keyboard.type("kre");
+  },
   marks,
   menu: async (page) => {
     await tool(page, "t");

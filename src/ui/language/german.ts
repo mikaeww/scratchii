@@ -130,6 +130,10 @@ export const GERMAN: Readonly<Record<TextKey, string>> = {
   "pad.guide": "Scratchii",
   "pad.unsaved":
     "Die Markierung wurde angewendet, kann aber nicht für später gemerkt werden: dieser Browser blockiert lokalen Speicher.",
+  "board.palette": "Befehle (Strg+K)",
+  "palette.title": "Befehle",
+  "palette.placeholder": "Befehl eintippen, z. B. tabelle 3x4",
+  "palette.none": "Nichts gefunden.",
   "calc.network": "Netz",
   "calc.broadcast": "Broadcast",
   "calc.mask": "Maske",
