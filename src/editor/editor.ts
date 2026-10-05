@@ -57,6 +57,8 @@ export class Editor {
   draft: readonly Item[] = [];
   selection: ReadonlySet<string> = new Set();
   marquee: Box | null = null;
+  // The item a line end would attach to while it is drawn or dragged, shown highlighted.
+  hint: Box | null = null;
   private readonly history: History<readonly Item[]>;
   private readonly listeners = new Set<Listener>();
 
@@ -173,6 +175,12 @@ export class Editor {
 
   setMarquee(box: Box | null): void {
     this.marquee = box;
+    this.emit("draft");
+  }
+
+  setHint(box: Box | null): void {
+    if (box === this.hint) return;
+    this.hint = box;
     this.emit("draft");
   }
 

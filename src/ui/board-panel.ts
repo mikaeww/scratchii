@@ -66,11 +66,9 @@ function titleInput(editor: Editor): HTMLInputElement {
   return input;
 }
 
-function fileMenu(actions: FileActions): HTMLElement {
-  const menu = document.createElement("div");
-  menu.className = "menu file-menu";
-  menu.setAttribute("role", "menu");
-  menu.hidden = true;
+type Entry = readonly [label: string, run: () => void];
+
+function fileEntries(actions: FileActions): Entry[] {
   const entries: [TextKey, () => void][] = [
     ["file.new", actions.create],
     ["file.open", actions.open],
@@ -79,22 +77,53 @@ function fileMenu(actions: FileActions): HTMLElement {
     ["file.svg", actions.exportSvg],
     ["file.pdf", actions.exportPdf],
   ];
-  for (const [label, run] of entries) {
-    const item = document.createElement("button");
-    item.className = "menu-item";
-    item.setAttribute("role", "menuitem");
-    item.textContent = text(label);
-    item.addEventListener("click", () => {
-      menu.hidden = true;
-      run();
-    });
-    menu.append(item);
-  }
+  return entries.map(([key, run]) => [text(key), run]);
+}
+
+// A button with a menu under it; the entries are read each time it opens. Arrows move, Escape closes.
+function menuButton(button: HTMLButtonElement, entries: () => readonly Entry[]): HTMLElement {
+  const menu = document.createElement("div");
+  menu.className = "menu panel-menu";
+  menu.setAttribute("role", "menu");
+  menu.hidden = true;
+  const fill = (): void => {
+    menu.replaceChildren(
+      ...entries().map(([label, run]) => {
+        const item = document.createElement("button");
+        item.className = "menu-item";
+        item.setAttribute("role", "menuitem");
+        item.textContent = label;
+        item.addEventListener("click", () => {
+          menu.hidden = true;
+          run();
+        });
+        return item;
+      }),
+    );
+  };
+  button.setAttribute("aria-haspopup", "menu");
+  button.addEventListener("click", () => {
+    if (menu.hidden) fill();
+    menu.hidden = !menu.hidden;
+    if (!menu.hidden) menu.querySelector<HTMLElement>("[role=menuitem]")?.focus();
+  });
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      const outside = !menu.contains(event.target as Node) && !button.contains(event.target as Node);
+      if (!menu.hidden && outside) menu.hidden = true;
+    },
+    true,
+  );
+  attachMenuKeys(menu, () => {
+    menu.hidden = true;
+    button.focus();
+  });
   return menu;
 }
 
 function iconButton(
-  name: "library" | "file" | "cloud" | "command",
+  name: "library" | "file" | "cloud" | "command" | "plus",
   label: TextKey,
   action: () => void,
 ): HTMLButtonElement {
@@ -107,38 +136,31 @@ function iconButton(
   return button;
 }
 
-export function boardPanel(editor: Editor, actions: FileActions, openPalette: () => void): HTMLElement {
+export interface PanelMenus {
+  readonly openPalette: () => void;
+  // Everything that puts something new on the board: tables, graphs, diagrams, building blocks, templates, PDF.
+  readonly inserts: () => readonly Entry[];
+}
+
+export function boardPanel(editor: Editor, actions: FileActions, menus: PanelMenus): HTMLElement {
   const panel = document.createElement("div");
   panel.className = "panel top-left";
   const mark = document.createElement("span");
   mark.className = "brand-mark";
   mark.textContent = "S";
   mark.setAttribute("aria-hidden", "true");
-  const menu = fileMenu(actions);
-  const file = iconButton("file", "board.file", () => {
-    menu.hidden = !menu.hidden;
-    if (!menu.hidden) menu.querySelector<HTMLElement>("[role=menuitem]")?.focus();
-  });
-  file.setAttribute("aria-haspopup", "menu");
-  document.addEventListener(
-    "pointerdown",
-    (event) => {
-      if (!menu.hidden && !menu.contains(event.target as Node) && event.target !== file) menu.hidden = true;
-    },
-    true,
-  );
-  attachMenuKeys(menu, () => {
-    menu.hidden = true;
-    file.focus();
-  });
+  const insert = iconButton("plus", "board.insert", () => undefined);
+  const file = iconButton("file", "board.file", () => undefined);
   panel.append(
     mark,
     titleInput(editor),
-    iconButton("command", "board.palette", openPalette),
+    insert,
+    menuButton(insert, menus.inserts),
+    iconButton("command", "board.palette", menus.openPalette),
     iconButton("library", "board.library", actions.library),
     file,
+    menuButton(file, () => fileEntries(actions)),
     syncButton(actions),
-    menu,
   );
   return panel;
 }

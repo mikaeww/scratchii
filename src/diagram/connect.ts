@@ -189,3 +189,34 @@ export function detached(line: LineItem, moving: ReadonlySet<string>): LineItem 
   const keep = (id: string | null): string | null => (id !== null && moving.has(id) ? id : null);
   return { ...line, ends: [keep(line.ends[0]), keep(line.ends[1])] };
 }
+
+// Each end of the line attached to the item it sits on, if any; both ends never on the same item. Used for
+// lines drawn with the tools and for lines the pen snapped.
+export function attachEnds(line: LineItem, scene: readonly Item[], reach: number): LineItem {
+  const [start, end] = worldPoints(line);
+  const first = attachTarget(scene, start, reach)?.id ?? null;
+  const second = attachTarget(scene, end, reach)?.id ?? null;
+  return { ...line, ends: [first, second === first ? null : second] };
+}
+
+// The line with one end moved to `world` and attached to `target` (or free); the other end, the bend and the
+// label stay.
+export function movedEnd(line: LineItem, index: 0 | 1, world: Point, target: string | null): LineItem {
+  const [start, end] = worldPoints(line);
+  const [from, to] = index === 0 ? [world, end] : [start, world];
+  const ends: LineItem["ends"] = index === 0 ? [target, line.ends[1]] : [line.ends[0], target];
+  return {
+    ...line,
+    x: from[0],
+    y: from[1],
+    points: [
+      [0, 0],
+      [to[0] - from[0], to[1] - from[1]],
+    ],
+    ends,
+  };
+}
+
+export function lineEnds(line: LineItem): [Point, Point] {
+  return worldPoints(line);
+}

@@ -1,6 +1,7 @@
 // Box, ellipse, triangle, diamond, star, line and arrow: drag from one corner (or end) to the other. Shift makes
 // squares, circles, even polygons and lines in 45° steps.
-import { attachTarget } from "../../diagram/connect.ts";
+import { attachEnds } from "../../diagram/connect.ts";
+import { shapeBox } from "../../geometry/bounds.ts";
 import { boxFromPoints } from "../../geometry/box.ts";
 import { PRESET_CORNERS, fitCorners, type PolygonKind } from "../../geometry/polygon.ts";
 import { createItem, type Item, type LineItem, type PolygonItem, type ShapeItem } from "../../model/item.ts";
@@ -61,18 +62,20 @@ export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): 
 
 export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
   let start: Vec | null = null;
-  let startTarget: string | null = null;
   let draft: Item | null = null;
-  const attached = (item: Item, end: Vec): Item => {
+  // Ends over an item attach to it; the item the moving end would attach to is highlighted.
+  const attached = (item: Item): Item => {
     if (item.type !== "line" && item.type !== "arrow") return item;
-    const target = attachTarget(editor.scene(), end, ATTACH_REACH / editor.view.zoom)?.id ?? null;
-    return { ...item, ends: [startTarget, target === startTarget ? null : target] };
+    const line = attachEnds(item, editor.scene(), ATTACH_REACH / editor.view.zoom);
+    const target = editor.scene().find((other) => other.id === line.ends[1]);
+    editor.setHint(target === undefined ? null : shapeBox(target));
+    return line;
   };
   const update = (sample: PointerSample): void => {
     if (start === null) return;
     const end = sample.shift ? constrain(start, sample.world, kind) : sample.world;
     // Keep the id while dragging, so the draft stays one item.
-    const next = attached(shapeItem(editor.style, kind, start, end), end);
+    const next = attached(shapeItem(editor.style, kind, start, end));
     draft = draft === null ? next : { ...next, id: draft.id, seed: draft.seed };
     editor.setDraft([draft]);
   };
@@ -81,10 +84,6 @@ export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
     down(sample) {
       start = sample.world;
       draft = null;
-      const lines = kind === "line" || kind === "arrow";
-      startTarget = lines
-        ? (attachTarget(editor.scene(), start, ATTACH_REACH / editor.view.zoom)?.id ?? null)
-        : null;
     },
     move: update,
     up(sample) {
@@ -94,6 +93,7 @@ export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
       start = null;
       draft = null;
       editor.setDraft([]);
+      editor.setHint(null);
       if (finished === null || origin === null) return;
       if (Math.hypot(sample.world[0] - origin[0], sample.world[1] - origin[1]) < MIN_SIZE) return;
       editor.commit([finished]);
@@ -102,6 +102,7 @@ export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
       start = null;
       draft = null;
       editor.setDraft([]);
+      editor.setHint(null);
     },
   };
 }

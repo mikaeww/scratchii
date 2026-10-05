@@ -86,3 +86,15 @@ export function onBendHandle(line: LineItem, view: Viewport, screen: Vec): boole
   const [x, y] = bendHandle(line, view);
   return Math.hypot(screen[0] - x, screen[1] - y) <= HANDLE_GRAB;
 }
+
+export function endHandles(line: LineItem, view: Viewport): [Vec, Vec] {
+  const [[ax, ay], [bx, by]] = line.points;
+  return [worldToScreen(view, [line.x + ax, line.y + ay]), worldToScreen(view, [line.x + bx, line.y + by])];
+}
+
+export function onEndHandle(line: LineItem, view: Viewport, screen: Vec): 0 | 1 | null {
+  const index = endHandles(line, view).findIndex(
+    ([x, y]) => Math.hypot(screen[0] - x, screen[1] - y) <= HANDLE_GRAB,
+  );
+  return index === 0 || index === 1 ? index : null;
+}

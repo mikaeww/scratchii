@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ATTACH_GAP, attachPoint, reroute, rerouted } from "../src/diagram/connect.ts";
+import {
+  ATTACH_GAP,
+  attachEnds,
+  attachPoint,
+  attachTarget,
+  movedEnd,
+  reroute,
+  rerouted,
+} from "../src/diagram/connect.ts";
 import { shapeBox } from "../src/geometry/bounds.ts";
 import { PRESET_CORNERS, polygonCorners } from "../src/geometry/polygon.ts";
 import { scaleItem } from "../src/geometry/transform.ts";
@@ -259,5 +267,53 @@ test("K6: two lines between the same two items lie apart, each end still on its 
         );
       });
     }
+  }
+});
+
+test("K7: attachEnds docks each end on the item under it, never both ends on one item", () => {
+  const random = seeded(74);
+  for (let i = 0; i < 1000; i++) {
+    const scene: Item[] = Array.from({ length: 1 + Math.floor(random() * 5) }, () => target(random));
+    const line = arrowBetween(null, null, random);
+    const reach = between(random, 0, 20);
+    const docked = attachEnds(line, scene, reach);
+    const [[ax, ay], [bx, by]] = line.points;
+    const start = attachTarget(scene, [line.x + ax, line.y + ay], reach)?.id ?? null;
+    const end = attachTarget(scene, [line.x + bx, line.y + by], reach)?.id ?? null;
+    assert.deepEqual(docked.ends, [start, end === start ? null : end], `case ${i}`);
+    assert.deepEqual(docked.points, line.points, `case ${i}: attaching moved the line`);
+  }
+});
+
+test("K8: moving one end keeps the other end, the bend and the label", () => {
+  const random = seeded(75);
+  for (let i = 0; i < 500; i++) {
+    const line = {
+      ...arrowBetween(null, null, random),
+      bend: between(random, -1, 1),
+      label: "ja",
+      ends: ["a", "b"] as const,
+    };
+    const index = random() < 0.5 ? 0 : 1;
+    const to: [number, number] = [between(random, -900, 900), between(random, -900, 900)];
+    const moved = movedEnd(line, index, to, index === 0 ? "c" : null);
+    const ends = (l: LineItem): [number, number][] =>
+      l.points.map(([x, y]) => [l.x + x, l.y + y] as [number, number]);
+    const [before, after] = [ends(line), ends(moved)];
+    const kept = index === 0 ? 1 : 0;
+    assert.ok(
+      Math.hypot(
+        (after[kept]?.[0] ?? 0) - (before[kept]?.[0] ?? 0),
+        (after[kept]?.[1] ?? 0) - (before[kept]?.[1] ?? 0),
+      ) < 1e-9,
+      `case ${i}: other end moved`,
+    );
+    assert.ok(
+      Math.hypot((after[index]?.[0] ?? 0) - to[0], (after[index]?.[1] ?? 0) - to[1]) < 1e-9,
+      `case ${i}: end not at the pointer`,
+    );
+    assert.equal(moved.bend, line.bend);
+    assert.equal(moved.label, "ja");
+    assert.deepEqual(moved.ends, index === 0 ? ["c", "b"] : ["a", null]);
   }
 });

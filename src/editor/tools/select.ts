@@ -4,7 +4,8 @@ import { boundsOf } from "../../geometry/bounds.ts";
 import { boxFromPoints, contains, overlaps, type Box } from "../../geometry/box.ts";
 import { itemAt } from "../../geometry/hit.ts";
 import { moveItem, scaleItem } from "../../geometry/transform.ts";
-import { detached } from "../../diagram/connect.ts";
+import { attachTarget, detached, movedEnd } from "../../diagram/connect.ts";
+import { shapeBox } from "../../geometry/bounds.ts";
 import { bendThrough } from "../../geometry/outline.ts";
 import { reviseItem, type Item, type LineItem } from "../../model/item.ts";
 import type { Editor } from "../editor.ts";
@@ -14,6 +15,7 @@ import {
   geometryBox,
   handleAt,
   onBendHandle,
+  onEndHandle,
   resizeBox,
   selectionBox,
   type Handle,
@@ -26,6 +28,7 @@ const REACH = 6;
 type Gesture =
   | { readonly kind: "move"; readonly start: Vec; readonly items: readonly Item[] }
   | { readonly kind: "bend"; readonly line: LineItem }
+  | { readonly kind: "end"; readonly line: LineItem; readonly index: 0 | 1 }
   | {
       readonly kind: "resize";
       readonly handle: Handle;
@@ -42,6 +45,8 @@ function movable(editor: Editor): Item[] {
   return items.map((item) => (item.type === "line" || item.type === "arrow" ? detached(item, moving) : item));
 }
 
+// Screen pixels around an item within which a dragged end attaches to it.
+const END_REACH = 10;
 // Bends beyond this many chord lengths fold the curve over itself.
 const MAX_BEND = 1.5;
 
@@ -49,9 +54,14 @@ function begin(editor: Editor, sample: PointerSample): Gesture {
   const selected = movable(editor);
   // Bending keeps the line's attachments; only moving a line on its own lets go of them.
   const line = bendable(editor.selected());
-  if (line !== null && onBendHandle(line, editor.view, sample.screen)) return { kind: "bend", line };
+  if (line !== null) {
+    const index = onEndHandle(line, editor.view, sample.screen);
+    if (index !== null) return { kind: "end", line, index };
+    if (onBendHandle(line, editor.view, sample.screen)) return { kind: "bend", line };
+  }
   const box = selectionBox(selected);
-  const handle = box === null ? null : handleAt(box, editor.view, sample.screen);
+  // A single line is changed through its end and bend handles; it has no corner handles.
+  const handle = box === null || line !== null ? null : handleAt(box, editor.view, sample.screen);
   const geometry = geometryBox(selected);
   if (handle !== null && geometry !== null) {
     return { kind: "resize", handle, box: geometry, start: sample.world, items: selected };
@@ -76,8 +86,21 @@ function begin(editor: Editor, sample: PointerSample): Gesture {
   return { kind: "move", start: sample.world, items: movable(editor) };
 }
 
+// The dragged end attaches to the item under it, which is highlighted, or is free over empty space.
+function dragEnd(editor: Editor, gesture: Extract<Gesture, { kind: "end" }>, sample: PointerSample): void {
+  const others = editor.scene().filter((item) => item.id !== gesture.line.id);
+  const target = attachTarget(others, sample.world, END_REACH / editor.view.zoom);
+  const other = gesture.line.ends[gesture.index === 0 ? 1 : 0];
+  const id = target === null || target.id === other ? null : target.id;
+  editor.setHint(id === null || target === null ? null : shapeBox(target));
+  editor.setDraft([movedEnd(gesture.line, gesture.index, sample.world, id)]);
+}
+
 function preview(editor: Editor, gesture: Gesture, sample: PointerSample): void {
   switch (gesture.kind) {
+    case "end":
+      dragEnd(editor, gesture, sample);
+      return;
     case "bend": {
       const { line } = gesture;
       const [a, b] = line.points;
@@ -114,6 +137,7 @@ export function createSelect(editor: Editor): Tool {
     gesture = null;
     editor.setDraft([]);
     editor.setMarquee(null);
+    editor.setHint(null);
   };
   return {
     cursor: "default",

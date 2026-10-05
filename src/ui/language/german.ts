@@ -129,6 +129,7 @@ export const GERMAN: Readonly<Record<TextKey, string>> = {
   "pad.guide": "Scratchii",
   "pad.unsaved":
     "Die Markierung wurde angewendet, kann aber nicht für später gemerkt werden: dieser Browser blockiert lokalen Speicher.",
+  "board.insert": "Einfügen: Tabelle, Graph, Diagramm, Vorlage, PDF",
   "board.palette": "Befehle (Strg+K)",
   "palette.title": "Befehle",
   "palette.placeholder": "Befehl eintippen, z. B. tabelle 3x4",

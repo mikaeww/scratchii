@@ -12,8 +12,10 @@
   box-shadow: var(--shadow-surface);
 }
 
+/* Above the side panels, so the menus that open from the top panels are not covered by them. */
 .top-row {
   position: fixed;
+  z-index: 2;
   top: var(--space-4);
   left: var(--space-4);
   right: var(--space-4);
@@ -279,10 +281,12 @@
   border-color: var(--ink);
 }
 
-.menu.file-menu {
+.menu.panel-menu {
   position: absolute;
   top: calc(100% + var(--space-2));
   left: 0;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 .input {

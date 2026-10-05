@@ -125,6 +125,7 @@ export const ENGLISH = {
   "pad.guide": "Scratchii",
   "pad.unsaved":
     "The mark was applied but could not be kept for next time: this browser blocks local storage.",
+  "board.insert": "Insert: table, graph, diagram, template, PDF",
   "board.palette": "Commands (Ctrl+K)",
   "palette.title": "Commands",
   "palette.placeholder": "Type a command, e.g. table 3x4",

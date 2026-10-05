@@ -34,7 +34,7 @@ import { runPdfImport } from "./ui/editing/pdf.ts";
 import { activeLanguage, text } from "./ui/text.ts";
 import { showToast } from "./ui/toast.ts";
 import { mountChrome } from "./ui/toolbar.ts";
-import { paletteCommands } from "./ui/palette/commands.ts";
+import { insertCommands, paletteCommands } from "./ui/palette/commands.ts";
 import { mountPalette } from "./ui/palette/palette.ts";
 import { screenToWorld, type Vec } from "./editor/viewport.ts";
 
@@ -97,9 +97,17 @@ async function start(): Promise<void> {
     writePreferences({ paper });
     stage.setPaper(paper);
   };
-  const openPalette = mountPalette(() => paletteCommands({ editor, centre, openText, setPaper }));
+  const context = { editor, centre, openText, setPaper };
+  const openPalette = mountPalette(() => paletteCommands(context));
+  const inserts = (): [string, () => void][] =>
+    insertCommands(context).map((command) => [
+      command.label,
+      () => {
+        command.run("");
+      },
+    ]);
   attachTablePaste(editor, centre, isTyping);
-  mountChrome(chrome, editor, canvas, boardPanel(editor, actions, openPalette));
+  mountChrome(chrome, editor, canvas, boardPanel(editor, actions, { openPalette, inserts }));
   chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {
     onBoardFile: actions.openFile,

@@ -9,6 +9,7 @@ import {
   type StrokeItem,
   type StrokePoint,
 } from "../../model/item.ts";
+import { attachEnds } from "../../diagram/connect.ts";
 import { joinHead, recogniseHead } from "../../recognize/arrows.ts";
 import type { Point } from "../../recognize/path.ts";
 import { recogniseShape } from "../../recognize/shapes.ts";
@@ -48,7 +49,24 @@ function joined(editor: Editor, stroke: StrokeItem, style: Editor["style"]): Ite
   ];
 }
 
+// Screen pixels around an item within which a snapped line's end attaches; hand-drawn ends often stop short of
+// the outline or run over it.
+const ATTACH_REACH = 18;
+
+// Snapped lines and arrows dock onto the items their ends touch, like lines drawn with the tools.
+function docked(editor: Editor, items: Item[]): Item[] {
+  const reach = ATTACH_REACH / editor.view.zoom;
+  return items.map((item) =>
+    item.type === "line" || item.type === "arrow" ? attachEnds(item, editor.scene(), reach) : item,
+  );
+}
+
 function snap(editor: Editor, stroke: StrokeItem): Item[] | null {
+  const shapes = recognised(editor, stroke);
+  return shapes === null ? null : docked(editor, shapes);
+}
+
+function recognised(editor: Editor, stroke: StrokeItem): Item[] | null {
   const style = { ...editor.style, color: stroke.color, size: stroke.size };
   const arrow = joined(editor, stroke, style);
   if (arrow !== null) return arrow;

@@ -173,6 +173,13 @@ function diagramCommands({ editor, centre, openText }: PaletteContext): Command[
   return [fromText, ...blocks, uml];
 }
 
+// What the insert menu lists: every command that puts something new on the board, in palette order.
+const INSERTS = /^(insert|block|template)\./;
+
+export function insertCommands(context: PaletteContext): Command[] {
+  return paletteCommands(context).filter((command) => INSERTS.test(command.id));
+}
+
 export function paletteCommands(context: PaletteContext): Command[] {
   return [
     ...toolCommands(context),

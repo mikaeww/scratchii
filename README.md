@@ -21,8 +21,11 @@ be chosen in the settings.
   square or level shapes snap to round, square and level
 - Type `=` after maths in a text or note and the answer appears: sums with powers, roots and functions,
   `0x`/`0b` numbers, `255 in hex`, and IPv4 subnets (`192.168.1.0/26 =`)
-- Labels in boxes, ellipses, polygons and on arrows (double-click); arrows drawn from or to a shape stay
-  attached and follow it; arrows and lines bend with the round handle at their middle
+- Labels in boxes, ellipses, polygons and on arrows (double-click); arrows dock onto shapes, notes, tables and
+  pictures (drawn with the tool or the pen, or by dragging an end handle, the target lights up) and follow
+  them; arrows and lines bend with the round handle at their middle
+- The + button lists everything that can be inserted: tables, graphs, charts, diagrams from text, building
+  blocks, templates, PDFs
 - Diagrams from Mermaid-style flowchart text (`A[Antrag] --> B{Vollständig?}`), laid out in layers with
   attached, labelled arrows; building blocks for an administrative procedure, a network, an ER sketch and a
   UML class
