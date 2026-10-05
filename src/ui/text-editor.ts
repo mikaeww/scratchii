@@ -1,11 +1,13 @@
 // The textarea laid over the canvas while a text or note is edited. Commits on blur, Escape or Ctrl+Enter;
-// an emptied text is deleted.
+// an emptied text is deleted. Typing "=" after maths at the end of a line puts the answer after it.
+import { answerFor, type Answer } from "../calc/answer.ts";
 import type { Editor } from "../editor/editor.ts";
 import type { TextEditing } from "../editor/tools/text.ts";
 import { worldToScreen } from "../editor/viewport.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING } from "../geometry/widths.ts";
 import { reviseItem, updateItem, type NoteItem, type TextItem } from "../model/item.ts";
 import { measureBlock, wrapText } from "../render/measure.ts";
+import { text } from "./text.ts";
 
 interface Session {
   readonly item: TextItem | NoteItem;
@@ -27,6 +29,31 @@ function finished(session: Session, text: string): TextItem | NoteItem | null {
   if (text.trim() === "") return isNew ? null : updateItem(item, { deleted: true });
   if (item.type === "note") return reviseItem({ ...item, text, height: noteHeight(item, text) });
   return reviseItem({ ...item, text, ...measureBlock(text, item.fontSize) });
+}
+
+// A subnet answer takes one line per fact, so it stays readable in a note.
+function worded(answer: Answer): string {
+  if (answer.kind === "value") return answer.text;
+  const { network, broadcast, mask, hosts, first, last } = answer.subnet;
+  const range = first === null || last === null ? "" : ` (${first} – ${last})`;
+  return [
+    `${text("calc.network")} ${network}`,
+    `${text("calc.mask")} ${mask}`,
+    `${text("calc.broadcast")} ${broadcast}`,
+    `${hosts} ${text("calc.hosts")}${range}`,
+  ].join("\n");
+}
+
+// Only when the "=" ends its line, so editing an old sum does not stack a second answer behind it.
+function answerAtCaret(area: HTMLTextAreaElement, event: Event): void {
+  if (!(event instanceof InputEvent) || event.data !== "=") return;
+  const caret = area.selectionStart;
+  const after = area.value.slice(caret);
+  if (after !== "" && !after.startsWith("\n")) return;
+  const line = area.value.slice(area.value.lastIndexOf("\n", caret - 1) + 1, caret);
+  const answer = answerFor(line);
+  if (answer === null) return;
+  area.setRangeText(` ${worded(answer)}`, caret, caret, "end");
 }
 
 export function mountTextEditor(root: HTMLElement, editor: Editor): TextEditing {
@@ -60,7 +87,10 @@ export function mountTextEditor(root: HTMLElement, editor: Editor): TextEditing 
     if (done !== null) editor.commit([done]);
   };
 
-  area.addEventListener("input", place);
+  area.addEventListener("input", (event) => {
+    answerAtCaret(area, event);
+    place();
+  });
   area.addEventListener("blur", finish);
   area.addEventListener("keydown", (event) => {
     if (event.key === "Escape" || (event.key === "Enter" && (event.ctrlKey || event.metaKey))) {

@@ -19,6 +19,7 @@
 | [verification/sync.md](verification/sync.md) | Sync merge, server, client |
 | [verification/handwriting.md](verification/handwriting.md) | Handwriting to text (experimental) |
 | [verification/annotate.md](verification/annotate.md) | Marks: presets, layout on text lines, own marks, deletion with their text |
+| [verification/study-tools/calc.md](verification/study-tools/calc.md) | Calculation: expressions, `=` answers, base conversion, subnets |
 
 ## Accessibility check
 

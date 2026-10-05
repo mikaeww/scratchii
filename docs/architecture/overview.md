@@ -7,6 +7,7 @@ src/editor/           Editor (session state, undo), viewport maths, input, tools
 src/geometry/         item shapes as SVG path data (freehand strokes, clean shape outlines, polygon corners)
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
 src/annotate/          marks: built-in presets, layout on text lines, own marks
+src/calc/             maths expressions, answers to a line ending in "=", IPv4 subnets; pure functions
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
 src/sync/             sync client, one sync round (Syncer), the 5 s loop, device sync settings
 server/               sync server: node:http + node:sqlite, serves dist/ too

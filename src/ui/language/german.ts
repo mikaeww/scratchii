@@ -130,6 +130,10 @@ export const GERMAN: Readonly<Record<TextKey, string>> = {
   "pad.guide": "Scratchii",
   "pad.unsaved":
     "Die Markierung wurde angewendet, kann aber nicht für später gemerkt werden: dieser Browser blockiert lokalen Speicher.",
+  "calc.network": "Netz",
+  "calc.broadcast": "Broadcast",
+  "calc.mask": "Maske",
+  "calc.hosts": "Hosts",
   "storage.unreadable":
     "Das letzte Board ließ sich nicht lesen und bleibt unverändert; ein neues Board wurde angelegt.",
   "storage.saveFailed":

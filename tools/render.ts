@@ -201,6 +201,15 @@ async function shapes(page: Page): Promise<void> {
   await stroke(page, wave(300, 680, 260));
 }
 
+// Typing "=" after maths: plain sums, a decimal comma, a conversion and a subnet.
+async function calc(page: Page): Promise<void> {
+  await tool(page, "t");
+  const lines = ["Miete 450 + 120 =", "3,5 * 2^3 =", "255 in hex =", "192.168.10.0/26 ="];
+  for (const [index, line] of lines.entries()) await type(page, [300, 200 + index * 70], line);
+  await tool(page, "n");
+  await type(page, [1000, 300], "Gebühr 12,50 * 4 =");
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
   german: { language: "de", grid: true },
@@ -214,6 +223,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   },
   recognise,
   shapes,
+  calc,
   marks,
   menu: async (page) => {
     await tool(page, "t");

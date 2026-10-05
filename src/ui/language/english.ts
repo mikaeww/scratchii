@@ -126,6 +126,10 @@ export const ENGLISH = {
   "pad.guide": "Scratchii",
   "pad.unsaved":
     "The mark was applied but could not be kept for next time: this browser blocks local storage.",
+  "calc.network": "Network",
+  "calc.broadcast": "Broadcast",
+  "calc.mask": "Mask",
+  "calc.hosts": "hosts",
   "storage.unreadable": "The last board could not be read and was left untouched; a new board was started.",
   "storage.saveFailed": "Saving failed. Your drawing is still here; it will be saved with the next change.",
   "storage.unavailable": "This browser does not allow local storage, so nothing will be saved.",
