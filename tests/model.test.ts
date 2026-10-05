@@ -52,7 +52,8 @@ test("M2: a wrong type at any path, or an unknown field, is rejected at that pat
   const json = JSON.parse(JSON.stringify({ ...board, items: board.items.slice(0, 1), tags: ["x"] })) as Json;
   let checked = 0;
   for (const path of [...leaves(json, "board")].slice(1)) {
-    const wrong = replaceAt(json, path, (old) => (typeof old === "string" ? 1 : "wrong"));
+    // A string replaces anything but strings and null: a line end may hold null or any id string.
+    const wrong = replaceAt(json, path, (old) => (typeof old === "string" || old === null ? 1 : "wrong"));
     assert.equal(rejectedAt(wrong), path);
     checked++;
   }

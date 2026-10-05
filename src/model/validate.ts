@@ -42,10 +42,17 @@ function object(value: unknown, path: string): Fields {
   return value as Fields;
 }
 
-function record(value: unknown, path: string, keys: readonly string[]): Fields {
+// `optional` keys may be missing; they were added after files were first written (ADR 0007).
+function record(
+  value: unknown,
+  path: string,
+  keys: readonly string[],
+  optional: readonly string[] = [],
+): Fields {
   const fields = object(value, path);
   for (const key of Object.keys(fields)) {
-    if (!keys.includes(key)) throw new ValidationError(`${path}.${key}`, "unknown field");
+    if (!keys.includes(key) && !optional.includes(key))
+      throw new ValidationError(`${path}.${key}`, "unknown field");
   }
   for (const key of keys) {
     if (!(key in fields)) throw new ValidationError(`${path}.${key}`, "missing");
@@ -232,6 +239,36 @@ function nullableColor(value: unknown, path: string): Color | null {
 
 type Reader = (fields: Fields, path: string) => Omit<Item, keyof ItemBase>;
 
+const OPTIONAL: Partial<Record<ItemType, readonly string[]>> = {
+  rect: ["label"],
+  ellipse: ["label"],
+  polygon: ["label"],
+  line: ["label", "ends"],
+  arrow: ["label", "ends"],
+};
+
+function optionalLabel(value: unknown, path: string): string {
+  return value === undefined ? "" : label(value, path);
+}
+
+function lineEnds(value: unknown, path: string): LineItem["ends"] {
+  if (value === undefined) return [null, null];
+  const end = (v: unknown, p: string): string | null => (v === null ? null : text(v, p));
+  const [start, finish, ...rest] = list(value, path, end, 2);
+  if (start === undefined || finish === undefined || rest.length > 0)
+    throw new ValidationError(path, "expected [start, end], each an item id or null");
+  return [start, finish];
+}
+
+function lineFields(type: LineItem["type"], fields: Fields, path: string): Omit<LineItem, keyof ItemBase> {
+  return {
+    type,
+    points: linePoints(fields.points, `${path}.points`),
+    label: optionalLabel(fields.label, `${path}.label`),
+    ends: lineEnds(fields.ends, `${path}.ends`),
+  };
+}
+
 const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> = {
   stroke: [
     ["points", "pressure", "tip"],
@@ -252,6 +289,7 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
       height: positive(f.height, `${p}.height`),
       fill: nullableColor(f.fill, `${p}.fill`),
       corners: corners(f.corners, `${p}.corners`),
+      label: optionalLabel(f.label, `${p}.label`),
     }),
   ],
   graph: [
@@ -283,8 +321,8 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
       ...tableGrid(f, p),
     }),
   ],
-  line: [["points"], (f, p) => ({ type: "line", points: linePoints(f.points, `${p}.points`) })],
-  arrow: [["points"], (f, p) => ({ type: "arrow", points: linePoints(f.points, `${p}.points`) })],
+  line: [["points"], (f, p) => lineFields("line", f, p)],
+  arrow: [["points"], (f, p) => lineFields("arrow", f, p)],
   text: [
     ["text", "fontSize", "width", "height"],
     (f, p) => ({
@@ -333,13 +371,14 @@ function shape(type: ShapeItem["type"], fields: Fields, path: string): Omit<Shap
     width: positive(fields.width, `${path}.width`),
     height: positive(fields.height, `${path}.height`),
     fill: nullableColor(fields.fill, `${path}.fill`),
+    label: optionalLabel(fields.label, `${path}.label`),
   };
 }
 
 export function validateItem(value: unknown, path: string): Item {
   const type = oneOf(object(value, path).type, `${path}.type`, ITEM_TYPES);
   const [keys, read] = READERS[type];
-  const fields = record(value, path, [...BASE_KEYS, ...keys]);
+  const fields = record(value, path, [...BASE_KEYS, ...keys], OPTIONAL[type] ?? []);
   return { ...base(fields, path), ...read(fields, path) } as Item;
 }
 

@@ -20,6 +20,8 @@ be chosen in the settings.
   star, line or arrow; nearly round, square or level shapes snap to round, square and level
 - Type `=` after maths in a text or note and the answer appears: sums with powers, roots and functions,
   `0x`/`0b` numbers, `255 in hex`, and IPv4 subnets (`192.168.1.0/26 =`)
+- Labels in boxes, ellipses, polygons and on arrows (double-click); arrows drawn from or to a shape stay
+  attached and follow it
 - Tables (`table 3x4` in the palette, or paste cells from a spreadsheet): Tab and Enter move between cells,
   columns grow to their longest word, right-click for rows, columns and a chart of the numbers
 - Function graphs (`graph sin(x); x^2` in the palette) and bar or line charts, edited as plain text with a

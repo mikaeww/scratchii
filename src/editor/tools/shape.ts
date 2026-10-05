@@ -1,5 +1,6 @@
 // Box, ellipse, triangle, diamond, star, line and arrow: drag from one corner (or end) to the other. Shift makes
 // squares, circles, even polygons and lines in 45° steps.
+import { attachTarget } from "../../diagram/connect.ts";
 import { boxFromPoints } from "../../geometry/box.ts";
 import { PRESET_CORNERS, fitCorners, type PolygonKind } from "../../geometry/polygon.ts";
 import { createItem, type Item, type LineItem, type PolygonItem, type ShapeItem } from "../../model/item.ts";
@@ -11,6 +12,8 @@ export type ShapeKind = "rect" | "ellipse" | PolygonKind | "line" | "arrow";
 
 // Below this drag distance (world units) a press is a click, not a shape.
 const MIN_SIZE = 3;
+// Screen pixels around an item within which a line end attaches to it.
+const ATTACH_REACH = 10;
 
 function constrain(start: Vec, end: Vec, kind: ShapeKind): Vec {
   const dx = end[0] - start[0];
@@ -28,7 +31,7 @@ function constrain(start: Vec, end: Vec, kind: ShapeKind): Vec {
 export function polygonItem(style: Style, points: readonly Vec[]): PolygonItem {
   const { color, size, fill } = style;
   const { box, corners } = fitCorners(points);
-  return createItem<PolygonItem>({ type: "polygon", ...box, color, size, fill, corners });
+  return createItem<PolygonItem>({ type: "polygon", ...box, color, size, fill, corners, label: "" });
 }
 
 export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): Item {
@@ -42,6 +45,7 @@ export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): 
       size,
       fill,
       corners: PRESET_CORNERS[kind],
+      label: "",
     });
   }
   if (kind === "line" || kind === "arrow") {
@@ -49,19 +53,26 @@ export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): 
       [0, 0],
       [end[0] - start[0], end[1] - start[1]],
     ];
-    return createItem<LineItem>({ type: kind, x: start[0], y: start[1], color, size, points });
+    const line = { type: kind, x: start[0], y: start[1], color, size, points, label: "" } as const;
+    return createItem<LineItem>({ ...line, ends: [null, null] });
   }
-  return createItem<ShapeItem>({ type: kind, ...boxFromPoints(start, end), color, size, fill });
+  return createItem<ShapeItem>({ type: kind, ...boxFromPoints(start, end), color, size, fill, label: "" });
 }
 
 export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
   let start: Vec | null = null;
+  let startTarget: string | null = null;
   let draft: Item | null = null;
+  const attached = (item: Item, end: Vec): Item => {
+    if (item.type !== "line" && item.type !== "arrow") return item;
+    const target = attachTarget(editor.scene(), end, ATTACH_REACH / editor.view.zoom)?.id ?? null;
+    return { ...item, ends: [startTarget, target === startTarget ? null : target] };
+  };
   const update = (sample: PointerSample): void => {
     if (start === null) return;
     const end = sample.shift ? constrain(start, sample.world, kind) : sample.world;
-    // Keep id and seed while dragging, so the wobble does not flicker.
-    const next = shapeItem(editor.style, kind, start, end);
+    // Keep the id while dragging, so the draft stays one item.
+    const next = attached(shapeItem(editor.style, kind, start, end), end);
     draft = draft === null ? next : { ...next, id: draft.id, seed: draft.seed };
     editor.setDraft([draft]);
   };
@@ -70,6 +81,10 @@ export function createShapeTool(editor: Editor, kind: ShapeKind): Tool {
     down(sample) {
       start = sample.world;
       draft = null;
+      const lines = kind === "line" || kind === "arrow";
+      startTarget = lines
+        ? (attachTarget(editor.scene(), start, ATTACH_REACH / editor.view.zoom)?.id ?? null)
+        : null;
     },
     move: update,
     up(sample) {

@@ -1,7 +1,15 @@
 // Text and sticky notes: a click opens the text editor on the item under the pointer, or on a new one.
 import { itemAt } from "../../geometry/hit.ts";
 import { FONT_SIZE, LINE_HEIGHT } from "../../geometry/widths.ts";
-import { createItem, type NoteItem, type TableItem, type TextItem } from "../../model/item.ts";
+import {
+  createItem,
+  type LineItem,
+  type NoteItem,
+  type PolygonItem,
+  type ShapeItem,
+  type TableItem,
+  type TextItem,
+} from "../../model/item.ts";
 import { cellAt, type Cell } from "../../table/grid.ts";
 import type { Editor } from "../editor.ts";
 import type { Vec } from "../viewport.ts";
@@ -10,6 +18,7 @@ import type { Tool } from "./tool.ts";
 export interface TextEditing {
   edit(item: TextItem | NoteItem, isNew: boolean): void;
   editCell(table: TableItem, cell: Cell): void;
+  editLabel(item: ShapeItem | PolygonItem | LineItem): void;
   isEditing(): boolean;
 }
 
@@ -59,6 +68,16 @@ export function editAt(editor: Editor, editing: TextEditing, at: Vec): boolean {
   const cell = hit?.type === "table" ? cellAt(hit, at) : null;
   if (hit?.type === "table" && cell !== null) {
     editing.editCell(hit, cell);
+    return true;
+  }
+  if (
+    hit?.type === "rect" ||
+    hit?.type === "ellipse" ||
+    hit?.type === "polygon" ||
+    hit?.type === "line" ||
+    hit?.type === "arrow"
+  ) {
+    editing.editLabel(hit);
     return true;
   }
   if (hit?.type !== "text" && hit?.type !== "note") return false;

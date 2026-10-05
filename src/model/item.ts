@@ -40,6 +40,8 @@ export interface ShapeItem extends ItemBase {
   readonly width: number;
   readonly height: number;
   readonly fill: Color | null;
+  // Centred text inside the shape (ADR 0007).
+  readonly label: string;
 }
 
 // A closed outline: triangles, diamonds, stars and recognised polygons. Corners are fractions of the box, so
@@ -50,6 +52,7 @@ export interface PolygonItem extends ItemBase {
   readonly height: number;
   readonly fill: Color | null;
   readonly corners: readonly (readonly [u: number, v: number])[];
+  readonly label: string;
 }
 
 // Up to six functions of x, drawn over [xMin, xMax] × [yMin, yMax] (src/calc/plot.ts).
@@ -85,6 +88,10 @@ export interface TableItem extends ItemBase {
 export interface LineItem extends ItemBase {
   readonly type: "line" | "arrow";
   readonly points: readonly [readonly [number, number], readonly [number, number]];
+  // Text at the middle of the line.
+  readonly label: string;
+  // The items the start and end are attached to; the editor keeps the points on them (ADR 0007).
+  readonly ends: readonly [start: string | null, end: string | null];
 }
 
 // Width and height are measured when the text is edited, so geometry never needs the DOM.

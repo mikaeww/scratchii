@@ -4,6 +4,7 @@ import { boundsOf } from "../../geometry/bounds.ts";
 import { boxFromPoints, overlaps, type Box } from "../../geometry/box.ts";
 import { itemAt } from "../../geometry/hit.ts";
 import { moveItem, scaleItem } from "../../geometry/transform.ts";
+import { detached } from "../../diagram/connect.ts";
 import { reviseItem, type Item } from "../../model/item.ts";
 import type { Editor } from "../editor.ts";
 import { corner, geometryBox, handleAt, resizeBox, selectionBox, type Handle } from "../selection.ts";
@@ -23,8 +24,15 @@ type Gesture =
     }
   | { readonly kind: "marquee"; readonly start: Vec; readonly base: ReadonlySet<string> };
 
+// A line moved or scaled on its own lets go of the items that stay where they are.
+function movable(editor: Editor): Item[] {
+  const items = editor.selected();
+  const moving = new Set(items.map((item) => item.id));
+  return items.map((item) => (item.type === "line" || item.type === "arrow" ? detached(item, moving) : item));
+}
+
 function begin(editor: Editor, sample: PointerSample): Gesture {
-  const selected = editor.selected();
+  const selected = movable(editor);
   const box = selectionBox(selected);
   const handle = box === null ? null : handleAt(box, editor.view, sample.screen);
   const geometry = geometryBox(selected);
@@ -44,7 +52,7 @@ function begin(editor: Editor, sample: PointerSample): Gesture {
   } else if (!editor.selection.has(hit.id)) {
     editor.setSelection([hit.id]);
   }
-  return { kind: "move", start: sample.world, items: editor.selected() };
+  return { kind: "move", start: sample.world, items: movable(editor) };
 }
 
 function preview(editor: Editor, gesture: Gesture, sample: PointerSample): void {

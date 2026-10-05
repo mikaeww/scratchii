@@ -269,6 +269,29 @@ async function tables(page: Page): Promise<void> {
   await page.mouse.click(1200, 760);
 }
 
+// A box and a diamond joined by an arrow drawn from inside one to inside the other; the diamond is then moved
+// and the arrow follows. Labels are typed with a double-click on the box, the diamond and the arrow.
+async function connectors(page: Page): Promise<void> {
+  await tool(page, "r");
+  await drag(page, [260, 300], [460, 420]);
+  await tool(page, "d");
+  await drag(page, [700, 280], [900, 440]);
+  await tool(page, "a");
+  await drag(page, [360, 360], [800, 360]);
+  await tool(page, "v");
+  await drag(page, [800, 330], [900, 600]);
+  const labels: [Point, string][] = [
+    [[360, 360], "Antrag eingegangen"],
+    [[900, 630], "vollständig?"],
+  ];
+  for (const [[x, y], label] of labels) {
+    await page.mouse.dblclick(x, y);
+    await page.keyboard.type(label);
+    await page.keyboard.press("Escape");
+  }
+  await page.mouse.click(1200, 760);
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
   german: { language: "de", grid: true },
@@ -285,6 +308,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   calc,
   graphs,
   tables,
+  connectors,
   palette: async (page) => {
     await page.keyboard.press("Control+k");
     await page.keyboard.type("kre");

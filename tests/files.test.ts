@@ -75,6 +75,14 @@ test("F3: the PDF writer produces a valid one-page PDF of the requested page siz
   }
 });
 
+// Labels measure their text; Node has no canvas, so a stand-in measures 10 units per character.
+class TextMeasureStandIn {
+  getContext(): { font: string; measureText: (text: string) => { width: number } } {
+    return { font: "", measureText: (text) => ({ width: text.length * 10 }) };
+  }
+}
+(globalThis as { OffscreenCanvas?: unknown }).OffscreenCanvas ??= TextMeasureStandIn;
+
 test("F4: SVG export is well-formed, renders elsewhere and has one path per path operation", () => {
   const random = seeded(41);
   const colors = Object.fromEntries(COLORS.map((c) => [c, "#123456"])) as Record<Color, string>;

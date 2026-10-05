@@ -18,10 +18,12 @@ import { measureBlock, wrapText } from "../../render/measure.ts";
 import type { Cell } from "../../table/grid.ts";
 import { text } from "../text.ts";
 import { cellDraft, cellField, finishedCell, moveCell, type CellMove } from "./cells.ts";
+import { finishedLabel, labelField, type Labelled } from "./labels.ts";
 
 type Session =
   | { readonly kind: "text"; readonly item: TextItem | NoteItem; readonly isNew: boolean }
-  | { readonly kind: "cell"; readonly table: TableItem; readonly cell: Cell };
+  | { readonly kind: "cell"; readonly table: TableItem; readonly cell: Cell }
+  | { readonly kind: "label"; readonly item: Labelled };
 
 function fontSizeOf(item: TextItem | NoteItem): number {
   return item.type === "text" ? item.fontSize : NOTE_FONT_SIZE[item.size];
@@ -97,6 +99,14 @@ function placeCell(area: HTMLTextAreaElement, editor: Editor, table: TableItem, 
   editor.setDraft([draft]);
 }
 
+function placeLabel(area: HTMLTextAreaElement, editor: Editor, item: Labelled): void {
+  const zoom = editor.view.zoom;
+  const field = labelField(item, area.value);
+  const [left, top] = worldToScreen(editor.view, [field.x, field.y]);
+  area.style.cssText = `${style(left, top, field.fontSize * zoom, [field.width * zoom, field.height * zoom])};color:var(--${item.color});text-align:center`;
+  area.classList.add("wrap");
+}
+
 function createArea(root: HTMLElement): HTMLTextAreaElement {
   const area = document.createElement("textarea");
   area.className = "text-editor";
@@ -107,9 +117,14 @@ function createArea(root: HTMLElement): HTMLTextAreaElement {
 }
 
 function finishedSession(session: Session, value: string): Item | null {
-  return session.kind === "text"
-    ? finishedText(session.item, session.isNew, value)
-    : finishedCell(session.table, session.cell, value);
+  switch (session.kind) {
+    case "text":
+      return finishedText(session.item, session.isNew, value);
+    case "cell":
+      return finishedCell(session.table, session.cell, value);
+    case "label":
+      return finishedLabel(session.item, value);
+  }
 }
 
 // Tab, Shift+Tab and Enter move between cells when `onMove` takes them; Escape and Ctrl+Enter end the edit.
@@ -145,6 +160,7 @@ export function mountTextEditor(root: HTMLElement, editor: Editor): TextEditing 
   const place = (): void => {
     if (session?.kind === "text") placeText(area, editor, session.item);
     else if (session?.kind === "cell") placeCell(area, editor, session.table, session.cell);
+    else if (session?.kind === "label") placeLabel(area, editor, session.item);
   };
   const finish = (): void => {
     if (session === null) return;
@@ -154,7 +170,10 @@ export function mountTextEditor(root: HTMLElement, editor: Editor): TextEditing 
     editor.setDraft([]);
     if (done !== null) editor.commit([done]);
   };
-  const open = (next: Session, value: string): void => {
+  // `hidden` is the item with its text blanked, drawn under the field while typing.
+  const open = (next: Session, value: string, hidden: Item | null = null): void => {
+    finish();
+    if (hidden !== null) editor.setDraft([hidden]);
     session = next;
     area.value = value;
     area.hidden = false;
@@ -182,13 +201,11 @@ export function mountTextEditor(root: HTMLElement, editor: Editor): TextEditing 
   });
   return {
     edit(item, isNew) {
-      finish();
-      editor.setDraft([{ ...item, text: "" }]);
-      open({ kind: "text", item, isNew }, item.text);
+      open({ kind: "text", item, isNew }, item.text, { ...item, text: "" });
     },
-    editCell(table, cell) {
-      finish();
-      editCell(table, cell);
+    editCell,
+    editLabel(item) {
+      open({ kind: "label", item }, item.label, { ...item, label: "" });
     },
     isEditing: () => session !== null,
   };

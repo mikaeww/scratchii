@@ -1,5 +1,6 @@
 // The editing session of one board: items, viewport, tool and style, selection, the draft being drawn, undo.
 // Not here: input handling (input.ts, tools/), drawing (src/render) or storage (src/storage).
+import { reroute } from "../diagram/connect.ts";
 import type { Box } from "../geometry/box.ts";
 import { mergeBoards } from "../model/merge.ts";
 import { nextUpdate, putItems, withItems, type Board } from "../model/board.ts";
@@ -90,10 +91,13 @@ export class Editor {
     const orphans = this.board.items.filter(
       (item) => item.type === "mark" && !item.deleted && gone.has(item.target) && !listed.has(item.id),
     );
-    this.board = putItems(this.board, [
+    const next = putItems(this.board, [
       ...changed,
       ...orphans.map((item) => updateItem(item, { deleted: true })),
     ]);
+    // Lines attached to what changed follow in the same step, so one undo moves both back (ADR 0007).
+    const followers = reroute(next.items, true);
+    this.board = followers.length === 0 ? next : putItems(next, followers);
     this.history.commit(this.board.items);
     this.emit("items");
   }
@@ -155,8 +159,10 @@ export class Editor {
     this.emit("style");
   }
 
+  // Attached lines follow the draft live; later entries with the same id win in scene().
   setDraft(draft: readonly Item[]): void {
     this.draft = draft;
+    if (draft.length > 0) this.draft = [...draft, ...reroute(this.scene(), false)];
     this.emit("draft");
   }
 

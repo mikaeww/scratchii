@@ -77,6 +77,7 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
       height: between(random, 0, 1000),
       fill: random() < 0.5 ? null : pick(random, COLORS),
       corners: Array.from({ length: 3 + Math.floor(random() * 8) }, () => [random(), random()] as const),
+      label: random() < 0.5 ? "" : "ja",
     }),
   graph: (random) => {
     const [x0, y0] = [between(random, -50, 0), between(random, -50, 0)];
@@ -174,6 +175,7 @@ function shape(random: Random, type: ShapeItem["type"]): ShapeItem {
     width: between(random, 0, 1000),
     height: between(random, 0, 1000),
     fill: random() < 0.5 ? null : pick(random, COLORS),
+    label: random() < 0.5 ? "" : "Antrag prüfen",
   });
 }
 
@@ -185,6 +187,9 @@ function line(random: Random, type: LineItem["type"]): LineItem {
       [0, 0],
       [between(random, -800, 800), between(random, -800, 800)],
     ],
+    label: random() < 0.5 ? "" : "nein",
+    // Ids that need not exist: validation only checks the shape of the field, rerouting drops missing ones.
+    ends: [random() < 0.3 ? crypto.randomUUID() : null, null],
   });
 }
 

@@ -5,7 +5,7 @@ Binding rules for Scratchii, derived from the `clean-project` skill. Deviations 
 ## Layout
 
 - `src/` is the web app, one concept per directory: `model`, `geometry`, `render`, `editor`, `annotate`,
-  `recognize`, `calc`, `table`, `storage`, `sync`, `ui`. `src/main.ts` only wires them together.
+  `recognize`, `calc`, `table`, `diagram`, `storage`, `sync`, `ui`. `src/main.ts` only wires them together.
 - `server/` is the sync server; it imports `src/model` and nothing from the DOM side.
 - `src-tauri/` is the desktop shell. It holds no app logic.
 - `tests/` holds `node --test` files, one per concept, against the exported functions.

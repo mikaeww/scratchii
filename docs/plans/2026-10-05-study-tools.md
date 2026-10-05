@@ -44,7 +44,7 @@ Not in this plan: live links between a table and its chart, sequence diagrams, h
 | 5 | `label` on shapes, polygons and lines, `ends` on lines, `src/diagram/connect.ts`; the editor reroutes attached lines on every draft and commit | ADR 0007 |
 | 6 | `src/diagram/flowchart.ts` (parser), `layout.ts`, `build.ts`, dialog and building blocks | |
 | 7 | `src/templates/`, paper backgrounds in preferences and settings | |
-| 8 | `src/import/pdf.ts` with pdf.js, loaded only when a PDF arrives | ADR 0006 |
+| 8 | `src/import/pdf.ts` with pdf.js, loaded only when a PDF arrives | ADR 0008 (0006 is taken by the Fold board link plan) |
 
 The item model grows by `table`, `graph` and `chart`, and by the fields `label` and `ends` (ADR 0007). Files
 written before keep loading: the new fields are optional when read and default to empty.

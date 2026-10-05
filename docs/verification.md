@@ -23,6 +23,7 @@
 | [verification/study-tools/palette.md](verification/study-tools/palette.md) | Command palette: ranking, arguments |
 | [verification/study-tools/graphs.md](verification/study-tools/graphs.md) | Function graphs and charts: ticks, sampling, edit text |
 | [verification/study-tools/tables.md](verification/study-tools/tables.md) | Tables: cell grid, rows and columns, fitting text, pasted cells |
+| [verification/study-tools/connectors.md](verification/study-tools/connectors.md) | Labels and lines attached to items |
 
 ## Accessibility check
 

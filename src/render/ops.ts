@@ -5,6 +5,7 @@ import { boxOutline, lineOutline } from "../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING, SHAPE_WIDTH } from "../geometry/widths.ts";
 import type { Color, Item, NoteItem } from "../model/item.ts";
 import { chartOps, graphOps } from "./items/charts.ts";
+import { lineLabelOps, shapeLabelOps } from "./items/labels.ts";
 import { tableOps } from "./items/tables.ts";
 import { wrapText } from "./measure.ts";
 
@@ -97,10 +98,10 @@ function build(item: Item): readonly DrawOp[] {
     case "rect":
     case "ellipse":
     case "polygon":
-      return [outlineOp(boxOutline(item), item.fill, item.color, item)];
+      return [outlineOp(boxOutline(item), item.fill, item.color, item), ...shapeLabelOps(item)];
     case "line":
     case "arrow":
-      return [outlineOp(lineOutline(item), null, item.color, item)];
+      return [outlineOp(lineOutline(item), null, item.color, item), ...lineLabelOps(item)];
     case "text": {
       const lineHeight = item.fontSize * LINE_HEIGHT;
       return [
