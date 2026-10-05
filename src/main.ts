@@ -23,6 +23,8 @@ import { boardActions } from "./ui/library/actions.ts";
 import { mountContextMenu } from "./ui/menus/context-menu.ts";
 import { mountMarkPad } from "./ui/menus/mark-pad.ts";
 import { mountOcr } from "./ui/menus/ocr-dialog.ts";
+import { editAsText } from "./ui/menus/item-text.ts";
+import { mountTextDialog } from "./ui/menus/text-dialog.ts";
 import { mountStage } from "./ui/stage.ts";
 import { stylePanel } from "./ui/style-panel.ts";
 import { mountTextEditor } from "./ui/text-editor.ts";
@@ -77,16 +79,18 @@ async function start(): Promise<void> {
   const chrome = required("#chrome", HTMLDivElement);
   const editing = mountTextEditor(chrome, editor);
   const tools = createTools(editor, editing);
+  const openText = mountTextDialog();
   attachInput(canvas, editor, tools, (world) => {
-    if (editor.tool === "select" && !editAt(editor, editing, world))
-      editing.edit(newText(editor, world), true);
+    if (editor.tool !== "select" || editAsText(editor, openText, world) || editAt(editor, editing, world))
+      return;
+    editing.edit(newText(editor, world), true);
   });
   const ink = readInk(document.documentElement);
   const stage = mountStage(canvas, editor, ink, tools);
   mountContextMenu(canvas, editor, ink, { pad: mountMarkPad(editor, ink), toText: mountOcr(editor) });
   const actions = boardActions(editor, ink, database, stage);
   const centre = (): Vec => screenToWorld(editor.view, [canvas.clientWidth / 2, canvas.clientHeight / 2]);
-  const openPalette = mountPalette(() => paletteCommands({ editor, centre }));
+  const openPalette = mountPalette(() => paletteCommands({ editor, centre, openText }));
   mountChrome(chrome, editor, canvas, boardPanel(editor, actions, openPalette));
   chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {

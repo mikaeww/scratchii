@@ -265,3 +265,19 @@
 .palette-argument {
   font-weight: 400;
 }
+
+.text-dialog {
+  width: min(560px, calc(100vw - 2 * var(--space-4)));
+}
+
+.text-dialog-field {
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  resize: vertical;
+}
+
+.text-dialog-problem:empty {
+  display: none;
+}

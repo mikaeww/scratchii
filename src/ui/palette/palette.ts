@@ -69,8 +69,12 @@ export function mountPalette(commands: () => readonly Command[]): () => void {
     if (matches.length === 0) list.append(emptyHint());
     input.setAttribute("aria-activedescendant", matches.length === 0 ? "" : `palette-option-${active}`);
   };
+  dialog.addEventListener("close", () => {
+    if (dialog.contains(document.activeElement)) input.blur();
+  });
   const run = (match: Match | undefined): void => {
     if (match === undefined) return;
+    input.blur();
     dialog.close();
     match.command.run(match.argument);
   };

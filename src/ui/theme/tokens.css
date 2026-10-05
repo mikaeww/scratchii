@@ -55,6 +55,7 @@
   /* Type. */
   --font-ui: "Space Grotesk", system-ui, sans-serif;
   --font-hand: "Shantell Sans", "Comic Sans MS", cursive;
+  --font-mono: ui-monospace, "DejaVu Sans Mono", monospace;
   --fs-micro: 11px;
   --fs-small: 13px;
   --fs-body: 15px;

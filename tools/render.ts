@@ -210,6 +210,26 @@ async function calc(page: Page): Promise<void> {
   await type(page, [1000, 300], "Gebühr 12,50 * 4 =");
 }
 
+async function command(page: Page, query: string): Promise<void> {
+  await page.keyboard.press("Control+k");
+  await page.keyboard.type(query);
+  await page.keyboard.press("Enter");
+}
+
+// A bar chart and a function graph from the palette, the chart values typed into its dialog; each is moved
+// aside with the select tool right after it lands in the middle.
+async function graphs(page: Page): Promise<void> {
+  await command(page, "balkendiagramm");
+  await page.fill(".text-dialog-field", "Miete: 450\nStrom: 62,5\nEssen: 280\nHandy: 20\nRücklage: -40");
+  await page.keyboard.press("Control+Enter");
+  await tool(page, "v");
+  await drag(page, [640, 400], [940, 400]);
+  await command(page, "graph sin(x); x^2/4 - 3; 1/x");
+  await tool(page, "v");
+  await drag(page, [640, 400], [380, 400]);
+  await page.mouse.click(1200, 760);
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
   german: { language: "de", grid: true },
@@ -224,6 +244,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   recognise,
   shapes,
   calc,
+  graphs,
   palette: async (page) => {
     await page.keyboard.press("Control+k");
     await page.keyboard.type("kre");

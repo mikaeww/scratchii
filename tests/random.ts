@@ -14,6 +14,8 @@ import {
   type MarkItem,
   type NoteItem,
   type PolygonItem,
+  type GraphItem,
+  type ChartItem,
   type ShapeItem,
   type Size,
   type StrokeItem,
@@ -75,6 +77,29 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
       fill: random() < 0.5 ? null : pick(random, COLORS),
       corners: Array.from({ length: 3 + Math.floor(random() * 8) }, () => [random(), random()] as const),
     }),
+  graph: (random) => {
+    const [x0, y0] = [between(random, -50, 0), between(random, -50, 0)];
+    return createItem<GraphItem>({
+      ...base(random),
+      type: "graph",
+      width: between(random, 1, 800),
+      height: between(random, 1, 800),
+      functions: random() < 0.5 ? ["sin(x)", "x^2 - 3"] : ["2x + 1"],
+      range: [x0, x0 + between(random, 0.1, 100), y0, y0 + between(random, 0.1, 100)],
+    });
+  },
+  chart: (random) => {
+    const count = 1 + Math.floor(random() * 8);
+    return createItem<ChartItem>({
+      ...base(random),
+      type: "chart",
+      width: between(random, 1, 800),
+      height: between(random, 1, 800),
+      kind: random() < 0.5 ? "bar" : "line",
+      labels: Array.from({ length: count }, (_, i) => `L${i}`),
+      values: Array.from({ length: count }, () => between(random, -100, 100)),
+    });
+  },
   line: (random) => line(random, "line"),
   arrow: (random) => line(random, "arrow"),
   text: (random) =>

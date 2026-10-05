@@ -21,6 +21,7 @@ function pathOf(op: PathOp): Path2D {
 function write(context: CanvasRenderingContext2D, op: TextOp, ink: Ink): void {
   context.font = handFont(op.fontSize);
   context.textBaseline = "top";
+  context.textAlign = op.align === "middle" ? "center" : op.align === "end" ? "right" : "left";
   context.fillStyle = ink.colors[op.color];
   op.lines.forEach((line, index) => {
     context.fillText(line, op.x, op.y + index * op.lineHeight);

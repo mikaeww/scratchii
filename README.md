@@ -20,6 +20,8 @@ be chosen in the settings.
   star, line or arrow; nearly round, square or level shapes snap to round, square and level
 - Type `=` after maths in a text or note and the answer appears: sums with powers, roots and functions,
   `0x`/`0b` numbers, `255 in hex`, and IPv4 subnets (`192.168.1.0/26 =`)
+- Function graphs (`graph sin(x); x^2` in the palette) and bar or line charts, edited as plain text with a
+  double-click
 - Drag the marker over text to highlight that part of the line; the highlight moves with the text
 - Right-click a text to underline it with one of eight hand-drawn styles, or draw your own
 - Handwriting to typed text, offline (experimental)

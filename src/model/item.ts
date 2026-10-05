@@ -52,6 +52,25 @@ export interface PolygonItem extends ItemBase {
   readonly corners: readonly (readonly [u: number, v: number])[];
 }
 
+// Up to six functions of x, drawn over [xMin, xMax] × [yMin, yMax] (src/calc/plot.ts).
+export interface GraphItem extends ItemBase {
+  readonly type: "graph";
+  readonly width: number;
+  readonly height: number;
+  readonly functions: readonly string[];
+  readonly range: readonly [xMin: number, xMax: number, yMin: number, yMax: number];
+}
+
+// One series of labelled values, as bars or a line.
+export interface ChartItem extends ItemBase {
+  readonly type: "chart";
+  readonly width: number;
+  readonly height: number;
+  readonly kind: "bar" | "line";
+  readonly labels: readonly string[];
+  readonly values: readonly number[];
+}
+
 // Start and end relative to the item origin; the start is (0, 0) when drawn.
 export interface LineItem extends ItemBase {
   readonly type: "line" | "arrow";
@@ -104,7 +123,16 @@ export interface ImageItem extends ItemBase {
 }
 
 export type Item =
-  StrokeItem | ShapeItem | PolygonItem | LineItem | TextItem | NoteItem | MarkItem | ImageItem;
+  | StrokeItem
+  | ShapeItem
+  | PolygonItem
+  | LineItem
+  | TextItem
+  | NoteItem
+  | MarkItem
+  | ImageItem
+  | GraphItem
+  | ChartItem;
 export type ItemType = Item["type"];
 export const ITEM_TYPES: readonly ItemType[] = [
   "stroke",
@@ -117,6 +145,8 @@ export const ITEM_TYPES: readonly ItemType[] = [
   "note",
   "mark",
   "image",
+  "graph",
+  "chart",
 ];
 
 type Fresh<T extends Item> = Omit<T, "id" | "seed" | "version" | "nonce" | "deleted" | "updated">;

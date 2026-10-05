@@ -5,9 +5,11 @@ src/main.ts           wiring only
 src/model/            Board, Item, validation (trust boundary for every input)
 src/editor/           Editor (session state, undo), viewport maths, input, tools/
 src/geometry/         item shapes as SVG path data (freehand strokes, clean shape outlines, polygon corners)
-src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
+src/render/           DrawOp lists per item (items/ for graphs and charts), canvas drawing, the ink palette
+                      read from CSS
 src/annotate/          marks: built-in presets, layout on text lines, own marks
-src/calc/             maths expressions, answers to a line ending in "=", IPv4 subnets; pure functions
+src/calc/             maths expressions, answers to a line ending in "=", IPv4 subnets, plot sampling and ticks,
+                      the edit text of graphs and charts; pure functions
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
 src/sync/             sync client, one sync round (Syncer), the 5 s loop, device sync settings
 server/               sync server: node:http + node:sqlite, serves dist/ too

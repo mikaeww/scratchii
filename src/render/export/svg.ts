@@ -34,7 +34,7 @@ function element(op: DrawOp, style: SvgStyle, shadow: boolean): string {
       const lines = op.lines.map(
         (line, i) => `<tspan x="${op.x}" y="${op.y + i * op.lineHeight}">${escape(line)}</tspan>`,
       );
-      return `<text font-family="Shantell Sans" font-weight="500" font-size="${op.fontSize}" dominant-baseline="text-before-edge" fill="${style.colors[op.color]}">${lines.join("")}</text>`;
+      return `<text font-family="Shantell Sans" font-weight="500" font-size="${op.fontSize}" dominant-baseline="text-before-edge" text-anchor="${op.align}" fill="${style.colors[op.color]}">${lines.join("")}</text>`;
     }
     case "image":
       return `<image href="${op.src}" width="${op.width}" height="${op.height}"/>`;

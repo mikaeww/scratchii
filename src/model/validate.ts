@@ -9,6 +9,7 @@ import {
   type Item,
   type ItemBase,
   type ItemType,
+  type ChartItem,
   type LineItem,
   type MarkItem,
   type MarkStroke,
@@ -138,6 +139,32 @@ function corners(value: unknown, path: string): readonly (readonly [number, numb
   return read;
 }
 
+const MAX_FUNCTIONS = 6;
+const MAX_VALUES = 40;
+const MAX_LABEL = 200;
+
+function label(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.length > MAX_LABEL)
+    throw new ValidationError(path, "expected a short text");
+  return value;
+}
+
+function viewRange(value: unknown, path: string): readonly [number, number, number, number] {
+  const [xMin, xMax, yMin, yMax, ...rest] = list(value, path, finite, 4);
+  if (xMin === undefined || xMax === undefined || yMin === undefined || yMax === undefined || rest.length > 0)
+    throw new ValidationError(path, "expected [xMin, xMax, yMin, yMax]");
+  if (!(xMin < xMax && yMin < yMax))
+    throw new ValidationError(path, "each range must go from small to large");
+  return [xMin, xMax, yMin, yMax];
+}
+
+function chartData(fields: Fields, path: string): Pick<ChartItem, "labels" | "values"> {
+  const labels = list(fields.labels, `${path}.labels`, label, MAX_VALUES);
+  const values = list(fields.values, `${path}.values`, finite, MAX_VALUES);
+  if (labels.length !== values.length) throw new ValidationError(`${path}.values`, "one value per label");
+  return { labels, values };
+}
+
 function linePoints(value: unknown, path: string): LineItem["points"] {
   const [start, end] = list(value, path, linePoint, 2);
   if (start === undefined || end === undefined) throw new ValidationError(path, "expected [start, end]");
@@ -194,6 +221,26 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
       height: positive(f.height, `${p}.height`),
       fill: nullableColor(f.fill, `${p}.fill`),
       corners: corners(f.corners, `${p}.corners`),
+    }),
+  ],
+  graph: [
+    ["width", "height", "functions", "range"],
+    (f, p) => ({
+      type: "graph",
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+      functions: list(f.functions, `${p}.functions`, label, MAX_FUNCTIONS),
+      range: viewRange(f.range, `${p}.range`),
+    }),
+  ],
+  chart: [
+    ["width", "height", "kind", "labels", "values"],
+    (f, p) => ({
+      type: "chart",
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+      kind: oneOf(f.kind, `${p}.kind`, ["bar", "line"] as const),
+      ...chartData(f, p),
     }),
   ],
   line: [["points"], (f, p) => ({ type: "line", points: linePoints(f.points, `${p}.points`) })],

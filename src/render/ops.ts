@@ -4,6 +4,7 @@ import { markerPath, strokePath } from "../geometry/freehand.ts";
 import { boxOutline, lineOutline } from "../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING, SHAPE_WIDTH } from "../geometry/widths.ts";
 import type { Color, Item, NoteItem } from "../model/item.ts";
+import { chartOps, graphOps } from "./items/charts.ts";
 import { wrapText } from "./measure.ts";
 
 export interface PathOp {
@@ -25,6 +26,8 @@ export interface TextOp {
   readonly fontSize: number;
   readonly lineHeight: number;
   readonly color: Color;
+  // Where x sits on each line: its left end, its middle or its right end.
+  readonly align: "start" | "middle" | "end";
 }
 
 export interface ImageOp {
@@ -66,6 +69,7 @@ function noteOps(item: NoteItem): DrawOp[] {
       fontSize,
       lineHeight: fontSize * LINE_HEIGHT,
       color: item.color,
+      align: "start",
     },
   ];
 }
@@ -107,6 +111,7 @@ function build(item: Item): readonly DrawOp[] {
           fontSize: item.fontSize,
           lineHeight,
           color: item.color,
+          align: "start",
         },
       ];
     }
@@ -114,6 +119,10 @@ function build(item: Item): readonly DrawOp[] {
       return noteOps(item);
     case "image":
       return [{ kind: "image", src: item.src, width: item.width, height: item.height }];
+    case "graph":
+      return graphOps(item);
+    case "chart":
+      return chartOps(item);
     // Marks depend on their target and are drawn by render/marks.ts.
     case "mark":
       return [];

@@ -21,6 +21,7 @@
 | [verification/annotate.md](verification/annotate.md) | Marks: presets, layout on text lines, own marks, deletion with their text |
 | [verification/study-tools/calc.md](verification/study-tools/calc.md) | Calculation: expressions, `=` answers, base conversion, subnets |
 | [verification/study-tools/palette.md](verification/study-tools/palette.md) | Command palette: ranking, arguments |
+| [verification/study-tools/graphs.md](verification/study-tools/graphs.md) | Function graphs and charts: ticks, sampling, edit text |
 
 ## Accessibility check
 
