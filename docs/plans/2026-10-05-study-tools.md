@@ -4,6 +4,8 @@ Five additions for university work in IT and public administration, asked for by
 PDF import, connectors and diagrams from text, calculation and graphs, tables, and a command palette with
 templates. Each one lands as its own commit with its checks; the order below keeps the tree working.
 
+**Status:** all eight steps done on 2026-10-05; results in [`../verification/study-tools/`](../verification/study-tools/).
+
 ## Outcome
 
 What works when this plan is done:

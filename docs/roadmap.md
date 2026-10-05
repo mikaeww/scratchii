@@ -18,3 +18,4 @@ real app icon, publishing.
 | 7 | Self-hosted sync server and client | done |
 | 8 | Handwriting to text (experimental) | done |
 | 9 | Settings, German, accessibility pass, screenshots | done |
+| 10 | Study tools: calculation, palette, graphs and charts, tables, labels and attached arrows, diagrams from text, templates and paper, PDF import ([plan](plans/2026-10-05-study-tools.md)) | done 2026-10-05 |
