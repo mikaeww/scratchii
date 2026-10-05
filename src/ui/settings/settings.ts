@@ -1,4 +1,5 @@
 // The settings dialog: language and dot grid for this device, and the sync server.
+import { PAPERS, type Paper } from "../../render/canvas.ts";
 import { readPreferences, writePreferences, type Preferences } from "../../storage/preferences.ts";
 import { SyncClient } from "../../sync/client.ts";
 import { readSyncSettings, writeSyncSettings, type SyncSettings } from "../../sync/settings.ts";
@@ -7,7 +8,7 @@ import { showToast } from "../toast.ts";
 
 export interface SettingsHooks {
   readonly onSync: (settings: SyncSettings | null) => void;
-  readonly onGrid: (on: boolean) => void;
+  readonly onPaper: (paper: Paper) => void;
   // Called after the new language is stored; the caller saves the board and reloads.
   readonly onLanguage: () => void;
 }
@@ -62,25 +63,27 @@ function generalSection(hooks: SettingsHooks): { element: HTMLElement; load: () 
   for (const [value, name] of LANGUAGES)
     language.add(new Option(name === "" ? text("settings.languageSystem") : name, value));
   languageField.append(label("settings.language"), language);
-  const gridField = document.createElement("label");
-  gridField.className = "check";
-  const grid = document.createElement("input");
-  grid.type = "checkbox";
-  gridField.append(grid, text("settings.grid"));
-  element.append(label("settings.general"), languageField, hint("settings.languageHint"), gridField);
+  const paperField = document.createElement("label");
+  paperField.className = "field";
+  const paper = document.createElement("select");
+  paper.className = "input";
+  for (const value of PAPERS) paper.add(new Option(text(`paper.${value}`), value));
+  paperField.append(label("settings.paper"), paper);
+  element.append(label("settings.general"), languageField, hint("settings.languageHint"), paperField);
   language.addEventListener("change", () => {
     if (!writePreferences({ language: language.value as Preferences["language"] }))
       showToast(text("settings.unsaved"), "error");
     else hooks.onLanguage();
   });
-  grid.addEventListener("change", () => {
-    writePreferences({ grid: grid.checked });
-    hooks.onGrid(grid.checked);
+  paper.addEventListener("change", () => {
+    const chosen = PAPERS.find((p) => p === paper.value) ?? "plain";
+    if (!writePreferences({ paper: chosen })) showToast(text("settings.unsaved"), "error");
+    hooks.onPaper(chosen);
   });
   const load = (): void => {
     const preferences = readPreferences();
     language.value = preferences.language;
-    grid.checked = preferences.grid;
+    paper.value = preferences.paper;
   };
   return { element, load };
 }

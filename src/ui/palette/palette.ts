@@ -69,8 +69,10 @@ export function mountPalette(commands: () => readonly Command[]): () => void {
     if (matches.length === 0) list.append(emptyHint());
     input.setAttribute("aria-activedescendant", matches.length === 0 ? "" : `palette-option-${active}`);
   };
+  // The close event arrives a task later; if the palette was opened again meanwhile, it must not take the
+  // focus away from the new query.
   dialog.addEventListener("close", () => {
-    if (dialog.contains(document.activeElement)) input.blur();
+    if (!dialog.open && dialog.contains(document.activeElement)) input.blur();
   });
   const run = (match: Match | undefined): void => {
     if (match === undefined) return;

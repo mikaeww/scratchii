@@ -210,10 +210,17 @@ async function calc(page: Page): Promise<void> {
   await type(page, [1000, 300], "Gebühr 12,50 * 4 =");
 }
 
+// Waits for the typed query and for the palette to close, so the next step never lands in the palette.
 async function command(page: Page, query: string): Promise<void> {
   await page.keyboard.press("Control+k");
+  await page.waitForSelector(".palette[open] input");
   await page.keyboard.type(query);
+  await page.waitForFunction(
+    (q) => document.querySelector<HTMLInputElement>(".palette input")?.value === q,
+    query,
+  );
   await page.keyboard.press("Enter");
+  await page.waitForSelector(".palette", { state: "hidden" });
 }
 
 // A bar chart and a function graph from the palette, the chart values typed into its dialog; each is moved
@@ -306,10 +313,24 @@ async function diagrams(page: Page): Promise<void> {
   await page.mouse.click(1100, 180);
 }
 
+// Squared paper with Cornell notes, then a week plan on lined paper, both from the palette, seen zoomed out.
+async function templates(page: Page): Promise<void> {
+  await command(page, "papier kariert");
+  await command(page, "vorlage cornell");
+  for (let i = 0; i < 3; i++) await page.click('[aria-label="Zoom out"]');
+  await tool(page, "v");
+  await drag(page, [640, 400], [470, 400]);
+  await command(page, "papier liniert");
+  await command(page, "vorlage wochenplan");
+  await drag(page, [640, 400], [990, 300]);
+  await page.mouse.click(1100, 700);
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
-  german: { language: "de", grid: true },
-  settings: { language: "de", grid: true },
+  german: { language: "de", paper: "dots" },
+  settings: { language: "de", paper: "dots" },
+  squares: { language: "de", paper: "squares" },
 };
 
 const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
@@ -324,6 +345,8 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   tables,
   connectors,
   diagrams,
+  templates,
+  squares: board,
   palette: async (page) => {
     await page.keyboard.press("Control+k");
     await page.keyboard.type("kre");

@@ -35,7 +35,8 @@ be chosen in the settings.
 - A library of all boards with search over titles, tags and text, and thumbnails
 - Open and save `.scratchii` files, export as PNG, SVG or PDF
 - Sync between the desktop app and browsers through your own small server, edit by edit, without losing changes
-- Undo for everything, keyboard shortcuts, a dot grid if you want one
+- Templates for Cornell notes, minutes, a cheat sheet and a week plan; plain, dotted, squared or lined paper
+- Undo for everything, keyboard shortcuts
 
 Status: drawing, shapes, marks, files, export, library and sync are tested with property tests and in a headless
 browser; the desktop app was run on Linux (Arch). Shape snapping and handwriting recognition are measured only on

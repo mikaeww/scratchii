@@ -8,7 +8,9 @@ import { BUILDING_BLOCKS, DIAGRAM_STARTER } from "../../diagram/blocks.ts";
 import { diagramRequest, placeDiagram } from "../editing/diagrams.ts";
 import { placeTable, tableSize } from "../editing/tables.ts";
 import { chartRequest } from "../menus/item-text.ts";
+import type { Paper } from "../../render/canvas.ts";
 import type { TextRequest } from "../menus/text-dialog.ts";
+import { templateCommands } from "./templates.ts";
 import { text } from "../text.ts";
 import type { Command } from "./rank.ts";
 
@@ -17,6 +19,8 @@ export interface PaletteContext {
   // The world point in the middle of the visible canvas, where inserted things land.
   readonly centre: () => Vec;
   readonly openText: (request: TextRequest) => void;
+  // Shows and remembers the paper background.
+  readonly setPaper: (paper: Paper) => void;
 }
 
 const GRAPH_SIZE = { width: 480, height: 320 } as const;
@@ -163,5 +167,6 @@ export function paletteCommands(context: PaletteContext): Command[] {
     tableCommand(context),
     ...graphCommands(context),
     ...diagramCommands(context),
+    ...templateCommands(context),
   ];
 }

@@ -1,9 +1,9 @@
 // Keeps the canvas sized to its box at device resolution and redraws once per frame, only after a change.
 import type { Editor } from "../editor/editor.ts";
 import type { Tools } from "../editor/input.ts";
-import { drawScene } from "../render/canvas.ts";
 import type { Ink } from "../render/ink.ts";
 import { drawOverlay } from "../render/overlay.ts";
+import { drawScene, type Paper } from "../render/canvas.ts";
 import { readPreferences } from "../storage/preferences.ts";
 
 export class CanvasUnavailableError extends Error {
@@ -14,14 +14,14 @@ export class CanvasUnavailableError extends Error {
 }
 
 export interface Stage {
-  setGrid(on: boolean): void;
+  setPaper(paper: Paper): void;
 }
 
 export function mountStage(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, tools: Tools): Stage {
   const context = canvas.getContext("2d", { alpha: false, desynchronized: true });
   if (context === null) throw new CanvasUnavailableError();
   let pending = false;
-  let grid = readPreferences().grid;
+  let paper = readPreferences().paper;
   const draw = (): void => {
     pending = false;
     const scene = {
@@ -30,7 +30,7 @@ export function mountStage(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, 
       width: canvas.clientWidth,
       height: canvas.clientHeight,
       ratio: window.devicePixelRatio,
-      grid,
+      paper,
     };
     drawScene(context, scene, ink, request);
     drawOverlay(context, editor, ink, scene.ratio);
@@ -65,8 +65,8 @@ export function mountStage(canvas: HTMLCanvasElement, editor: Editor, ink: Ink, 
   canvas.style.cursor = tools[editor.tool].cursor;
   resize();
   return {
-    setGrid(on) {
-      grid = on;
+    setPaper(next) {
+      paper = next;
       request();
     },
   };

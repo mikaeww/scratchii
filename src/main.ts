@@ -15,7 +15,8 @@ import { createBoard } from "./model/board.ts";
 import { readInk } from "./render/ink.ts";
 import { lineBoxes } from "./render/marks.ts";
 import { attachDrop } from "./editor/drop.ts";
-import { rememberStyle } from "./storage/preferences.ts";
+import { rememberStyle, writePreferences } from "./storage/preferences.ts";
+import type { Paper } from "./render/canvas.ts";
 import { openLastBoard } from "./storage/session.ts";
 import { openBoards } from "./storage/local.ts";
 import { boardPanel } from "./ui/board-panel.ts";
@@ -91,7 +92,11 @@ async function start(): Promise<void> {
   mountContextMenu(canvas, editor, ink, { pad: mountMarkPad(editor, ink), toText: mountOcr(editor) });
   const actions = boardActions(editor, ink, database, stage);
   const centre = (): Vec => screenToWorld(editor.view, [canvas.clientWidth / 2, canvas.clientHeight / 2]);
-  const openPalette = mountPalette(() => paletteCommands({ editor, centre, openText }));
+  const setPaper = (paper: Paper): void => {
+    writePreferences({ paper });
+    stage.setPaper(paper);
+  };
+  const openPalette = mountPalette(() => paletteCommands({ editor, centre, openText, setPaper }));
   attachTablePaste(editor, centre, isTyping);
   mountChrome(chrome, editor, canvas, boardPanel(editor, actions, openPalette));
   chrome.append(stylePanel(editor));

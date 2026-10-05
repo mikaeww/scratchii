@@ -44,7 +44,7 @@ export function mountTextDialog(): (request: TextRequest) => void {
     dialog.close();
   };
   dialog.addEventListener("close", () => {
-    if (dialog.contains(document.activeElement)) field.blur();
+    if (!dialog.open && dialog.contains(document.activeElement)) field.blur();
   });
 
   const submit = (): void => {

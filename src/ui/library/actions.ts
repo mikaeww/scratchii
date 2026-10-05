@@ -112,8 +112,8 @@ function settingsOpener(session: Session | null, sync: SyncLoop | null, stage: S
       if (sync === null) showToast(text("storage.unavailable"), "error");
       else sync.restart(settings);
     },
-    onGrid: (on) => {
-      stage.setGrid(on);
+    onPaper: (paper) => {
+      stage.setPaper(paper);
     },
     onLanguage: () => {
       // Save the open board before the reload that switches the language.

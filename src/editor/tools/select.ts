@@ -1,7 +1,7 @@
-// The select tool: click to select, shift-click to add, drag to move, drag a corner to resize, drag on empty
-// canvas for a marquee. Double-click editing is wired in input.ts.
+// The select tool: click to select, shift-click to add, drag to move (also from empty space inside the
+// selection box), drag a corner to resize, drag on empty canvas for a marquee. Double-click editing is wired in input.ts.
 import { boundsOf } from "../../geometry/bounds.ts";
-import { boxFromPoints, overlaps, type Box } from "../../geometry/box.ts";
+import { boxFromPoints, contains, overlaps, type Box } from "../../geometry/box.ts";
 import { itemAt } from "../../geometry/hit.ts";
 import { moveItem, scaleItem } from "../../geometry/transform.ts";
 import { detached } from "../../diagram/connect.ts";
@@ -40,6 +40,10 @@ function begin(editor: Editor, sample: PointerSample): Gesture {
     return { kind: "resize", handle, box: geometry, start: sample.world, items: selected };
   }
   const hit = itemAt(editor.scene(), sample.world, REACH / editor.view.zoom);
+  // Inside the selection box a drag moves the selection, even over empty space in a frame or template.
+  if (hit === null && !sample.shift && geometry !== null && contains(geometry, sample.world)) {
+    return { kind: "move", start: sample.world, items: selected };
+  }
   if (hit === null) {
     if (!sample.shift) editor.setSelection([]);
     return { kind: "marquee", start: sample.world, base: editor.selection };

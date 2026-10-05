@@ -75,9 +75,12 @@ export interface Scene {
   readonly width: number;
   readonly height: number;
   readonly ratio: number;
-  // Only the live canvas shows the grid; exports and previews leave it out.
-  readonly grid?: boolean;
+  // Only the live canvas shows the paper; exports and previews leave it out.
+  readonly paper?: Paper;
 }
+
+export const PAPERS = ["plain", "dots", "squares", "lines"] as const;
+export type Paper = (typeof PAPERS)[number];
 
 // World units between dots at zoom 1; zoomed out, the step doubles until the dots are this far apart on screen.
 const GRID = 28;
@@ -92,13 +95,15 @@ export function gridStep(zoom: number): number {
 
 let gridTile: { readonly key: string; readonly pattern: CanvasPattern } | null = null;
 
-function dotPattern(
+// One tile of the paper, everything centred on the tile's middle so all papers share the grid points.
+function paperPattern(
   context: CanvasRenderingContext2D,
+  paper: Exclude<Paper, "plain">,
   size: number,
-  radius: number,
+  ratio: number,
   color: string,
 ): CanvasPattern | null {
-  const key = `${size}:${radius}:${color}`;
+  const key = `${paper}:${size}:${ratio}:${color}`;
   if (gridTile?.key === key) return gridTile.pattern;
   const tile = document.createElement("canvas");
   tile.width = size;
@@ -106,21 +111,32 @@ function dotPattern(
   const tileContext = tile.getContext("2d");
   if (tileContext === null) return null;
   tileContext.fillStyle = color;
-  tileContext.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
-  tileContext.fill();
+  const [middle, line] = [size / 2, Math.max(1, Math.round(ratio))];
+  if (paper === "dots") {
+    tileContext.arc(middle, middle, DOT_RADIUS * ratio, 0, Math.PI * 2);
+    tileContext.fill();
+  } else {
+    tileContext.fillRect(0, Math.round(middle - line / 2), size, line);
+    if (paper === "squares") tileContext.fillRect(Math.round(middle - line / 2), 0, line, size);
+  }
   const pattern = context.createPattern(tile, "repeat");
   gridTile = pattern === null ? null : { key, pattern };
   return pattern;
 }
 
-// One dot tile repeated by a pattern, in device pixels: a single fill per frame. One arc per dot cost up to
+// One tile repeated by a pattern, in device pixels: a single fill per frame. One arc per dot cost up to
 // 250 ms a frame in WebKitGTK when zoomed out.
-function drawGrid(context: CanvasRenderingContext2D, scene: Scene, ink: Ink): void {
+function drawPaper(
+  context: CanvasRenderingContext2D,
+  scene: Scene,
+  ink: Ink,
+  paper: Exclude<Paper, "plain">,
+): void {
   const { view, ratio } = scene;
   const step = gridStep(view.zoom);
   const spacing = step * view.zoom * ratio;
   const size = Math.ceil(spacing);
-  const pattern = dotPattern(context, size, DOT_RADIUS * ratio, ink.colors.ink);
+  const pattern = paperPattern(context, paper, size, ratio, ink.colors.ink);
   if (pattern === null) return;
   const offsetX = (Math.floor(view.x / step) * step - view.x) * view.zoom * ratio;
   const offsetY = (Math.floor(view.y / step) * step - view.y) * view.zoom * ratio;
@@ -129,7 +145,8 @@ function drawGrid(context: CanvasRenderingContext2D, scene: Scene, ink: Ink): vo
   );
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.fillStyle = pattern;
-  context.globalAlpha = 0.22;
+  // Lines cover more of the page than dots, so they are drawn lighter.
+  context.globalAlpha = paper === "dots" ? 0.22 : 0.12;
   context.fillRect(0, 0, scene.width * ratio, scene.height * ratio);
   context.globalAlpha = 1;
 }
@@ -145,7 +162,7 @@ export function drawScene(
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.fillStyle = ink.canvas;
   context.fillRect(0, 0, scene.width, scene.height);
-  if (scene.grid === true) drawGrid(context, scene, ink);
+  if (scene.paper !== undefined && scene.paper !== "plain") drawPaper(context, scene, ink, scene.paper);
   context.setTransform(
     ratio * view.zoom,
     0,
