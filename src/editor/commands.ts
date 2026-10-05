@@ -64,7 +64,10 @@ export function applyStyle(editor: Editor, change: Partial<Style>): void {
     const { fill, ...rest } = change;
     const fits =
       fill !== undefined &&
-      (item.type === "rect" || item.type === "ellipse" || (item.type === "note" && fill !== null));
+      (item.type === "rect" ||
+        item.type === "ellipse" ||
+        item.type === "polygon" ||
+        (item.type === "note" && fill !== null));
     return reviseItem({ ...item, ...rest, ...(fits ? { fill } : {}) } as Item);
   });
   editor.commit(changed);

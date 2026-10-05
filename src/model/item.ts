@@ -42,6 +42,16 @@ export interface ShapeItem extends ItemBase {
   readonly fill: Color | null;
 }
 
+// A closed outline: triangles, diamonds, stars and recognised polygons. Corners are fractions of the box, so
+// moving and scaling only touch the box.
+export interface PolygonItem extends ItemBase {
+  readonly type: "polygon";
+  readonly width: number;
+  readonly height: number;
+  readonly fill: Color | null;
+  readonly corners: readonly (readonly [u: number, v: number])[];
+}
+
 // Start and end relative to the item origin; the start is (0, 0) when drawn.
 export interface LineItem extends ItemBase {
   readonly type: "line" | "arrow";
@@ -93,12 +103,14 @@ export interface ImageItem extends ItemBase {
   readonly src: string;
 }
 
-export type Item = StrokeItem | ShapeItem | LineItem | TextItem | NoteItem | MarkItem | ImageItem;
+export type Item =
+  StrokeItem | ShapeItem | PolygonItem | LineItem | TextItem | NoteItem | MarkItem | ImageItem;
 export type ItemType = Item["type"];
 export const ITEM_TYPES: readonly ItemType[] = [
   "stroke",
   "rect",
   "ellipse",
+  "polygon",
   "line",
   "arrow",
   "text",

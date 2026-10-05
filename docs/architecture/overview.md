@@ -4,7 +4,7 @@
 src/main.ts           wiring only
 src/model/            Board, Item, validation (trust boundary for every input)
 src/editor/           Editor (session state, undo), viewport maths, input, tools/
-src/geometry/         item shapes as SVG path data (freehand outline, later rough shapes)
+src/geometry/         item shapes as SVG path data (freehand strokes, clean shape outlines, polygon corners)
 src/render/           DrawOp lists per item, canvas drawing, the ink palette read from CSS
 src/annotate/          marks: built-in presets, layout on text lines, own marks
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
@@ -47,8 +47,12 @@ same commit (`Editor.commit`). The right-click menu (`ui/menus/context-menu.ts`)
 ## Recognition
 
 The pen starts a 500 ms timer whenever it comes to rest; if it is still resting when the timer fires, the
-stroke so far goes to `recognize/shapes.ts` and, if it is a line, arrow, box or ellipse, the draft becomes that
-shape and is committed on lift. The marker tool hands its finished stroke and the measured lines of every text
+stroke so far goes to `recognize/shapes.ts` and, if it is a line, arrow, box, ellipse or polygon (triangle,
+diamond, star, tilted box, up to six corners; corners found in `recognize/polygons.ts` and straightened in
+`recognize/straighten.ts`: right-angled boxes become exact rectangles, level when they lean less than 12°,
+nearly level edges become level), the draft becomes that
+shape and is committed on lift; moving on turns it back into the freehand stroke. Nearly round ellipses become
+circles, nearly square boxes squares, and lines within 5° of a 45° step snap onto it. The marker tool hands its finished stroke and the measured lines of every text
 in the scene to `recognize/highlight.ts`; a hit becomes a mark behind the text, otherwise the stroke stays a
 translucent marker stroke.
 

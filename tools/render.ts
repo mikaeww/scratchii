@@ -51,6 +51,28 @@ function loop(cx: number, cy: number, radius: number): Point[] {
   });
 }
 
+function polygonPath(corners: readonly Point[], perEdge = 10): Point[] {
+  const closed = [...corners, ...corners.slice(0, 1)];
+  return closed.slice(1).flatMap((corner, i) => {
+    const from = closed[i] ?? corner;
+    return Array.from(
+      { length: perEdge },
+      (_, k) =>
+        [
+          from[0] + ((corner[0] - from[0]) * k) / perEdge + Math.sin(k * 1.7) * 1.5,
+          from[1] + ((corner[1] - from[1]) * k) / perEdge + Math.cos(k * 1.3) * 1.5,
+        ] as const,
+    );
+  });
+}
+
+function pentagram(cx: number, cy: number, radius: number): Point[] {
+  return Array.from({ length: 5 }, (_, i) => {
+    const angle = -Math.PI / 2 + (i * 4 * Math.PI) / 5;
+    return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius] as const;
+  });
+}
+
 async function drag(page: Page, from: Point, to: Point): Promise<void> {
   await stroke(page, [from, to]);
 }
@@ -131,6 +153,54 @@ async function recognise(page: Page): Promise<void> {
   await stroke(page, wave(260, 560, 300));
 }
 
+// The shape tools in the top row, the same shapes drawn with the pen and held still in the bottom row.
+async function shapes(page: Page): Promise<void> {
+  await swatch(page, 1, 0);
+  const tools = ["r", "o", "3", "d", "s", "a"];
+  for (const [index, key] of tools.entries()) {
+    await tool(page, key);
+    const x = 300 + index * 150;
+    await drag(page, [x, 170], [x + 110, key === "a" ? 170 : 280]);
+  }
+  await tool(page, "p");
+  await stroke(
+    page,
+    polygonPath([
+      [330, 470],
+      [400, 580],
+      [270, 590],
+    ]),
+    700,
+  );
+  await stroke(
+    page,
+    loop(520, 520, 60).map(([x, y]) => [x - 0.4 * (x - 520), y] as const),
+    700,
+  );
+  await stroke(
+    page,
+    polygonPath([
+      [700, 440],
+      [770, 520],
+      [700, 600],
+      [630, 520],
+    ]),
+    700,
+  );
+  await stroke(page, polygonPath(pentagram(890, 525, 75), 12), 700);
+  await stroke(
+    page,
+    polygonPath([
+      [1020, 470],
+      [1150, 450],
+      [1170, 560],
+      [1040, 585],
+    ]),
+    700,
+  );
+  await stroke(page, wave(300, 680, 260));
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
   german: { language: "de", grid: true },
@@ -143,6 +213,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
     await page.click(".sync-status");
   },
   recognise,
+  shapes,
   marks,
   menu: async (page) => {
     await tool(page, "t");

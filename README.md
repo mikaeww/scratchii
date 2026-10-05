@@ -15,8 +15,9 @@ be chosen in the settings.
 ## Features
 
 - A pen that follows pen pressure and feels like a felt marker
-- Boxes, ellipses, lines, arrows, text, sticky notes and pictures, all in the same hand-drawn style
-- Hold the pen still at the end of a scribble and it becomes a clean box, ellipse, line or arrow
+- Boxes, ellipses, triangles, diamonds, stars, lines, arrows, text, sticky notes and pictures
+- Hold the pen still at the end of a scribble and it becomes a clean box, circle or ellipse, triangle, diamond,
+  star, line or arrow; nearly round, square or level shapes snap to round, square and level
 - Drag the marker over text to highlight that part of the line; the highlight moves with the text
 - Right-click a text to underline it with one of eight hand-drawn styles, or draw your own
 - Handwriting to typed text, offline (experimental)
@@ -83,7 +84,8 @@ request.
 | Key | Action |
 | --- | --- |
 | V, H, P, M | select, hand, pen, marker |
-| R, O, A, L | box, ellipse, arrow, line |
+| R, O, 3, D, S | box, ellipse, triangle, diamond, star |
+| A, L | arrow, line |
 | T, N, E | text, sticky note, eraser |
 | Space (hold) | move the canvas |
 | Ctrl+Z / Ctrl+Shift+Z | undo / redo |

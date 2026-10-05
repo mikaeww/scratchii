@@ -1,6 +1,6 @@
 # 0002: Neo Brutalism, light only
 
-**Status:** accepted
+**Status:** accepted, shadows on drawn shapes superseded by 0005
 **Date:** 2026-10-02
 
 ## Context

@@ -13,8 +13,8 @@ an account at someone else's service.
   save or a sync.
 - **Cleanup is a gesture, not a menu.** Holding the pen still turns a scribble into a shape; dragging the marker
   over text highlights it; a right-click underlines it.
-- **Everything is in one style.** Shapes, notes, underlines and the interface share the same outlines, shadows,
-  palette and handwriting.
+- **Everything is in one style.** Shapes, notes, underlines and the interface share the same outlines, palette
+  and handwriting; notes and interface panels cast the same hard shadows (ADR 0005).
 - **Nothing gets lost.** Every edit is saved locally within a second; sync merges per element, so edits on two
   devices both survive.
 - **It is yours.** Files are plain JSON, the sync server runs on your own machine, nothing is sent elsewhere.

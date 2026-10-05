@@ -1,7 +1,7 @@
 // Every item becomes a short list of draw operations in item-local coordinates. The canvas renderer and the
 // SVG export both draw from this list, so they cannot drift apart. Not here: the drawing itself.
 import { markerPath, strokePath } from "../geometry/freehand.ts";
-import { roughBox, roughLine, type RoughPaths } from "../geometry/rough.ts";
+import { boxOutline, lineOutline } from "../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING, SHAPE_WIDTH } from "../geometry/widths.ts";
 import type { Color, Item, NoteItem } from "../model/item.ts";
 import { wrapText } from "./measure.ts";
@@ -40,29 +40,24 @@ const cache = new WeakMap<Item, readonly DrawOp[]>();
 // Highlighter ink lets what is underneath show through; marks behind text use the same value.
 export const MARKER_OPACITY = 0.55;
 
-function fillOp(d: string, fill: Color): PathOp {
-  return { kind: "path", d, fill, stroke: null, width: 0, shadow: true, opacity: 1 };
-}
-
-function outlineOps(paths: RoughPaths, color: Color, width: number): PathOp[] {
-  return paths.outline.map((d) => ({
+// Only notes cast the hard shadow (ADR 0005): on a drawn ellipse it reads as a thicker outline.
+function outlineOp(d: string, fill: Color | null, stroke: Color, item: Item): PathOp {
+  return {
     kind: "path",
     d,
-    fill: null,
-    stroke: color,
-    width,
-    shadow: false,
+    fill,
+    stroke,
+    width: SHAPE_WIDTH[item.size],
+    shadow: item.type === "note",
     opacity: 1,
-  }));
+  };
 }
 
 function noteOps(item: NoteItem): DrawOp[] {
-  const paths = roughBox(item);
   const fontSize = NOTE_FONT_SIZE[item.size];
   const lines = wrapText(item.text, fontSize, item.width - 2 * NOTE_PADDING);
   return [
-    ...(paths.fill === null ? [] : [fillOp(paths.fill, item.fill)]),
-    ...outlineOps(paths, "ink", SHAPE_WIDTH[item.size]),
+    outlineOp(boxOutline(item), item.fill, "ink", item),
     {
       kind: "text",
       lines,
@@ -95,14 +90,12 @@ function build(item: Item): readonly DrawOp[] {
       ];
     }
     case "rect":
-    case "ellipse": {
-      const paths = roughBox(item);
-      const fill = paths.fill === null || item.fill === null ? [] : [fillOp(paths.fill, item.fill)];
-      return [...fill, ...outlineOps(paths, item.color, SHAPE_WIDTH[item.size])];
-    }
+    case "ellipse":
+    case "polygon":
+      return [outlineOp(boxOutline(item), item.fill, item.color, item)];
     case "line":
     case "arrow":
-      return outlineOps(roughLine(item), item.color, SHAPE_WIDTH[item.size]);
+      return [outlineOp(lineOutline(item), null, item.color, item)];
     case "text": {
       const lineHeight = item.fontSize * LINE_HEIGHT;
       return [

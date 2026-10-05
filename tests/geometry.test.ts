@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { boundsOf, shapeBox } from "../src/geometry/bounds.ts";
 import { contains, grow, type Box } from "../src/geometry/box.ts";
 import { hitItem } from "../src/geometry/hit.ts";
+import { polygonCorners } from "../src/geometry/polygon.ts";
 import { moveItem, scaleItem } from "../src/geometry/transform.ts";
 import type { Item } from "../src/model/item.ts";
 import { between, randomPlaced, seeded } from "./random.ts";
@@ -15,6 +16,8 @@ function storedPoints(item: Item): [number, number][] {
     case "line":
     case "arrow":
       return item.points.map(([x, y]) => [item.x + x, item.y + y]);
+    case "polygon":
+      return polygonCorners(item).map(([x, y]) => [x, y]);
     case "mark":
       return [[item.x, item.y]];
     default:
@@ -44,11 +47,11 @@ test("G1: bounds contain all stored geometry", () => {
   }
 });
 
-test("G2: centres of filled items and stored points of strokes and lines are hits", () => {
+test("G2: centres of filled items and stored points of strokes, lines and polygons are hits", () => {
   const random = seeded(11);
   for (let i = 0; i < 2000; i++) {
     const item = randomPlaced(random);
-    if (item.type === "stroke" || item.type === "line" || item.type === "arrow") {
+    if (item.type === "stroke" || item.type === "line" || item.type === "arrow" || item.type === "polygon") {
       for (const point of storedPoints(item)) assert.ok(hitItem(item, point, 0), `case ${i} ${item.type}`);
     } else if ((item.type !== "rect" && item.type !== "ellipse") || item.fill !== null) {
       const box = shapeBox(item);

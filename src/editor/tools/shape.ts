@@ -1,12 +1,13 @@
-// Rectangle, ellipse, line and arrow: drag from one corner (or end) to the other. Shift makes squares, circles
-// and lines in 45° steps.
+// Box, ellipse, triangle, diamond, star, line and arrow: drag from one corner (or end) to the other. Shift makes
+// squares, circles, even polygons and lines in 45° steps.
 import { boxFromPoints } from "../../geometry/box.ts";
-import { createItem, type Item, type LineItem, type ShapeItem } from "../../model/item.ts";
+import { PRESET_CORNERS, fitCorners, type PolygonKind } from "../../geometry/polygon.ts";
+import { createItem, type Item, type LineItem, type PolygonItem, type ShapeItem } from "../../model/item.ts";
 import type { Editor, Style } from "../editor.ts";
 import type { Vec } from "../viewport.ts";
 import type { PointerSample, Tool } from "./tool.ts";
 
-export type ShapeKind = "rect" | "ellipse" | "line" | "arrow";
+export type ShapeKind = "rect" | "ellipse" | PolygonKind | "line" | "arrow";
 
 // Below this drag distance (world units) a press is a click, not a shape.
 const MIN_SIZE = 3;
@@ -23,8 +24,26 @@ function constrain(start: Vec, end: Vec, kind: ShapeKind): Vec {
   return [start[0] + Math.sign(dx || 1) * side, start[1] + Math.sign(dy || 1) * side];
 }
 
+// Corners in world coordinates; the item keeps them as fractions of their box.
+export function polygonItem(style: Style, points: readonly Vec[]): PolygonItem {
+  const { color, size, fill } = style;
+  const { box, corners } = fitCorners(points);
+  return createItem<PolygonItem>({ type: "polygon", ...box, color, size, fill, corners });
+}
+
 export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): Item {
   const { color, size, fill } = style;
+  if (kind === "triangle" || kind === "diamond" || kind === "star") {
+    const box = boxFromPoints(start, end);
+    return createItem<PolygonItem>({
+      type: "polygon",
+      ...box,
+      color,
+      size,
+      fill,
+      corners: PRESET_CORNERS[kind],
+    });
+  }
   if (kind === "line" || kind === "arrow") {
     const points: LineItem["points"] = [
       [0, 0],

@@ -5,7 +5,7 @@ import { createItem, type Item, type StrokeItem, type StrokePoint } from "../../
 import { recogniseShape } from "../../recognize/shapes.ts";
 import type { Editor } from "../editor.ts";
 import type { Vec } from "../viewport.ts";
-import { shapeItem } from "./shape.ts";
+import { polygonItem, shapeItem } from "./shape.ts";
 import type { PointerSample, Tool } from "./tool.ts";
 
 // How long the pen must rest, and how far (screen pixels) it may tremble while resting.
@@ -26,6 +26,7 @@ function snap(editor: Editor, stroke: StrokeItem): Item | null {
     const { x, y, width, height } = shape.box;
     return shapeItem(style, shape.kind, [x, y], [x + width, y + height]);
   }
+  if (shape.kind === "polygon") return polygonItem(style, shape.corners);
   return shapeItem(style, shape.kind, shape.from, shape.to);
 }
 

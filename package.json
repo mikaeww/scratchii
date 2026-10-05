@@ -36,7 +36,6 @@
     "@tauri-apps/plugin-dialog": "2.8.1",
     "@tauri-apps/plugin-fs": "2.6.0",
     "perfect-freehand": "1.2.3",
-    "roughjs": "4.6.6",
     "tesseract.js": "7.0.0"
   }
 }

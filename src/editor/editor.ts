@@ -8,7 +8,20 @@ import { History } from "./history.ts";
 import type { Viewport } from "./viewport.ts";
 
 export type ToolName =
-  "select" | "hand" | "pen" | "marker" | "rect" | "ellipse" | "line" | "arrow" | "text" | "note" | "eraser";
+  | "select"
+  | "hand"
+  | "pen"
+  | "marker"
+  | "rect"
+  | "ellipse"
+  | "triangle"
+  | "diamond"
+  | "star"
+  | "line"
+  | "arrow"
+  | "text"
+  | "note"
+  | "eraser";
 export type Change =
   "board" | "meta" | "items" | "remote" | "view" | "tool" | "style" | "draft" | "selection";
 

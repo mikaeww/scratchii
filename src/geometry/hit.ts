@@ -3,9 +3,10 @@ import type { Vec } from "../editor/viewport.ts";
 import type { Item } from "../model/item.ts";
 import { shapeBox } from "./bounds.ts";
 import { contains, grow, type Box } from "./box.ts";
+import { insidePolygon, polygonCorners } from "./polygon.ts";
 import { inkReach } from "./widths.ts";
 
-function segmentDistance([px, py]: Vec, [ax, ay]: Vec, [bx, by]: Vec): number {
+export function segmentDistance([px, py]: Vec, [ax, ay]: Vec, [bx, by]: Vec): number {
   const dx = bx - ax;
   const dy = by - ay;
   const length = dx * dx + dy * dy;
@@ -60,6 +61,12 @@ export function hitItem(item: Item, point: Vec, tolerance: number): boolean {
       return item.type === "ellipse"
         ? insideEllipse(point, grow(box, reach))
         : contains(grow(box, reach), point);
+    }
+    case "polygon": {
+      const corners = polygonCorners(item);
+      const closed = [...corners, ...corners.slice(0, 1)];
+      const onEdge = nearPolyline(point, [0, 0], closed, reach);
+      return onEdge || (item.fill !== null && insidePolygon(point, corners));
     }
     case "text":
     case "note":

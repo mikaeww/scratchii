@@ -8,6 +8,7 @@ export interface Sample {
   readonly points: Point[];
   readonly box?: { x: number; y: number; width: number; height: number };
   readonly ends?: readonly [Point, Point];
+  readonly corners?: readonly Point[];
 }
 
 function jitter(random: Random, points: Point[], amount: number): Point[] {
@@ -98,14 +99,118 @@ export function rect(random: Random): Sample {
     [box.x + width, box.y + height],
     [box.x, box.y + height],
   ];
-  const first = Math.floor(random() * 4);
-  const order = [0, 1, 2, 3, 4].map((i): Point => corners[(first + i) % 4] ?? [0, 0]);
-  const points = order.slice(1).flatMap((corner, i) => segment(order[i] ?? corner, corner, 15));
+  const points = closedPath(random, corners, 15);
+  return { points: jitter(random, points, Math.min(width, height) * 0.01), box };
+}
+
+// One pass through the corners, starting at a random one, with a little overshoot past the start.
+function closedPath(random: Random, corners: readonly Point[], perEdge: number): Point[] {
+  const first = Math.floor(random() * corners.length);
+  const order = Array.from(
+    { length: corners.length + 1 },
+    (_, i): Point => corners[(first + i) % corners.length] ?? [0, 0],
+  );
+  const points = order.slice(1).flatMap((corner, i) => segment(order[i] ?? corner, corner, perEdge));
   const overshoot = between(random, -0.05, 0.08);
-  const last = order[4] ?? [0, 0];
+  const last = order.at(-1) ?? [0, 0];
   const next = order[1] ?? last;
   points.push(last, [last[0] + (next[0] - last[0]) * overshoot, last[1] + (next[1] - last[1]) * overshoot]);
-  return { points: jitter(random, points, Math.min(width, height) * 0.01), box };
+  return points;
+}
+
+function spot(random: Random): Point {
+  return [between(random, -500, 500), between(random, -500, 500)];
+}
+
+// Any triangle at least 80 units across whose angles are all at least 25°, drawn in either direction.
+export function triangle(random: Random): Sample {
+  for (;;) {
+    const [x, y] = spot(random);
+    const span = size(random);
+    const corners: Point[] = Array.from({ length: 3 }, () => [x + random() * span, y + random() * span]);
+    const angles = corners.map((corner, i) => {
+      const a = corners[(i + 1) % 3] ?? corner;
+      const b = corners[(i + 2) % 3] ?? corner;
+      const u = Math.atan2(a[1] - corner[1], a[0] - corner[0]);
+      const v = Math.atan2(b[1] - corner[1], b[0] - corner[0]);
+      const angle = Math.abs(u - v) % (2 * Math.PI);
+      return Math.min(angle, 2 * Math.PI - angle);
+    });
+    const xs = corners.map(([cx]) => cx);
+    const ys = corners.map(([, cy]) => cy);
+    const across = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    if (Math.min(...angles) < (25 * Math.PI) / 180 || across < 80) continue;
+    const drawn = random() < 0.5 ? corners : [...corners].reverse();
+    return { points: jitter(random, closedPath(random, drawn, 20), span * 0.008), corners };
+  }
+}
+
+export function diamond(random: Random): Sample {
+  const width = size(random);
+  const height = width * between(random, 0.5, 1.6);
+  const box = { x: between(random, -500, 500), y: between(random, -500, 500), width, height };
+  const corners: Point[] = [
+    [box.x + width / 2, box.y],
+    [box.x + width, box.y + height / 2],
+    [box.x + width / 2, box.y + height],
+    [box.x, box.y + height / 2],
+  ];
+  return { points: jitter(random, closedPath(random, corners, 15), Math.min(width, height) * 0.008), box };
+}
+
+// A five-pointed star the way most people draw it: one stroke from point to point, crossing itself.
+export function star(random: Random): Sample {
+  const radius = size(random) / 2;
+  const [cx, cy] = spot(random);
+  const tips = Array.from({ length: 5 }, (_, i): Point => {
+    const angle = -Math.PI / 2 + (i * 4 * Math.PI) / 5;
+    return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius];
+  });
+  const points = closedPath(random, tips, 14);
+  const xs = tips.map(([x]) => x);
+  const ys = tips.map(([, y]) => y);
+  const box = {
+    x: Math.min(...xs),
+    y: Math.min(...ys),
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys),
+  };
+  return { points: jitter(random, points, radius * 0.012), box };
+}
+
+// A box leaning by an angle in [low, high] degrees (either way), each corner off by up to 4 % of the short side.
+export function leaningBox(random: Random, low: number, high: number): Sample & { lean: number } {
+  const width = size(random);
+  const height = width * between(random, 0.4, 1.6);
+  const [cx, cy] = spot(random);
+  const lean = (between(random, low, high) * (random() < 0.5 ? -1 : 1) * Math.PI) / 180;
+  const slack = Math.min(width, height) * 0.04;
+  const corners = [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ].map(([sx = 0, sy = 0]): Point => {
+    const [x, y] = [(sx * width) / 2, (sy * height) / 2];
+    return [
+      cx + x * Math.cos(lean) - y * Math.sin(lean) + between(random, -slack, slack),
+      cy + x * Math.sin(lean) + y * Math.cos(lean) + between(random, -slack, slack),
+    ];
+  });
+  return { points: jitter(random, closedPath(random, corners, 15), slack / 4), corners, lean };
+}
+
+// A triangle on a base that leans up to 6°, its apex within 5 % of the base length from the middle.
+export function baseTriangle(random: Random): Sample {
+  const base = size(random);
+  const [x, y] = spot(random);
+  const tilt = base * Math.tan((between(random, -6, 6) * Math.PI) / 180);
+  const corners: Point[] = [
+    [x, y],
+    [x + base, y + tilt],
+    [x + base * between(random, 0.45, 0.55), y - base * between(random, 0.6, 1.1)],
+  ];
+  return { points: jitter(random, closedPath(random, corners, 20), base * 0.006), corners };
 }
 
 const NOT_SHAPES = {

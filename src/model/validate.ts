@@ -124,6 +124,20 @@ function linePoint(value: unknown, path: string): readonly [number, number] {
   return [x, y];
 }
 
+const MAX_CORNERS = 32;
+
+function corner(value: unknown, path: string): readonly [number, number] {
+  const [u, v] = linePoint(value, path);
+  if (u < 0 || u > 1 || v < 0 || v > 1) throw new ValidationError(path, "corner outside the box (0 to 1)");
+  return [u, v];
+}
+
+function corners(value: unknown, path: string): readonly (readonly [number, number])[] {
+  const read = list(value, path, corner, MAX_CORNERS);
+  if (read.length < 3) throw new ValidationError(path, "a polygon needs at least 3 corners");
+  return read;
+}
+
 function linePoints(value: unknown, path: string): LineItem["points"] {
   const [start, end] = list(value, path, linePoint, 2);
   if (start === undefined || end === undefined) throw new ValidationError(path, "expected [start, end]");
@@ -172,6 +186,16 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
   ],
   rect: [["width", "height", "fill"], (f, p) => shape("rect", f, p)],
   ellipse: [["width", "height", "fill"], (f, p) => shape("ellipse", f, p)],
+  polygon: [
+    ["width", "height", "fill", "corners"],
+    (f, p) => ({
+      type: "polygon",
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+      fill: nullableColor(f.fill, `${p}.fill`),
+      corners: corners(f.corners, `${p}.corners`),
+    }),
+  ],
   line: [["points"], (f, p) => ({ type: "line", points: linePoints(f.points, `${p}.points`) })],
   arrow: [["points"], (f, p) => ({ type: "arrow", points: linePoints(f.points, `${p}.points`) })],
   text: [

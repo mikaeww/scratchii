@@ -13,6 +13,7 @@ import {
   type LineItem,
   type MarkItem,
   type NoteItem,
+  type PolygonItem,
   type ShapeItem,
   type Size,
   type StrokeItem,
@@ -65,6 +66,15 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
     }),
   rect: (random) => shape(random, "rect"),
   ellipse: (random) => shape(random, "ellipse"),
+  polygon: (random) =>
+    createItem<PolygonItem>({
+      ...base(random),
+      type: "polygon",
+      width: between(random, 0, 1000),
+      height: between(random, 0, 1000),
+      fill: random() < 0.5 ? null : pick(random, COLORS),
+      corners: Array.from({ length: 3 + Math.floor(random() * 8) }, () => [random(), random()] as const),
+    }),
   line: (random) => line(random, "line"),
   arrow: (random) => line(random, "arrow"),
   text: (random) =>
