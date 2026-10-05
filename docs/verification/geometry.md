@@ -14,6 +14,7 @@ looking at screenshots.
 | G3 | `hitItem` is false for every point farther than tolerance plus stroke width outside `boundsOf(item)` | Property test, 2000 items × 20 points | `boundsOf` (G1) |
 | G4 | `moveItem` by (dx, dy) moves `boundsOf` by exactly (dx, dy) | Property test, 2000 items | Arithmetic on the bounds |
 | G5 | `scaleItem(item, from, to)` maps the item's geometric box (bounds without stroke padding) from `from` to `to` within 1e-6, for every type with a free aspect ratio; text scales uniformly by the smaller factor | Property test, 2000 items, boxes with sides 1 to 2000 | The affine map from `from` to `to` |
+| G6 | An eraser swipe erases every item its path crosses, even where two samples lie farther apart than the eraser reach | Example test (`tests/editor.test.ts`): two strokes between two samples 300 units apart | Construction |
 
 ## Corpus
 
@@ -32,6 +33,7 @@ Generated with fixed seeds (`tests/random.ts`).
 | G3 | 2026-10-02 | 40 000 / 40 000 points |
 | G4 | 2026-10-02 | 2000 / 2000 items |
 | G5 | 2026-10-02 | 2000 / 2000 items; in the running app a 200 × 100 box dragged by (+100, +50) on its corner became exactly 300 × 150 at the same origin (headless check) |
+| G6 | 2026-10-04 | passes; the same test fails on the previous eraser, which only tested the samples |
 
 ## Known gaps
 

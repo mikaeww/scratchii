@@ -78,27 +78,58 @@ export interface Scene {
   readonly grid?: boolean;
 }
 
-// World units between dots; at small zooms every fourth dot is enough to keep the canvas calm.
+// World units between dots at zoom 1; zoomed out, the step doubles until the dots are this far apart on screen.
 const GRID = 28;
+const GRID_MIN_SPACING = 14;
+const DOT_RADIUS = 1.4;
 
+export function gridStep(zoom: number): number {
+  let step = GRID;
+  while (step * zoom < GRID_MIN_SPACING) step *= 2;
+  return step;
+}
+
+let gridTile: { readonly key: string; readonly pattern: CanvasPattern } | null = null;
+
+function dotPattern(
+  context: CanvasRenderingContext2D,
+  size: number,
+  radius: number,
+  color: string,
+): CanvasPattern | null {
+  const key = `${size}:${radius}:${color}`;
+  if (gridTile?.key === key) return gridTile.pattern;
+  const tile = document.createElement("canvas");
+  tile.width = size;
+  tile.height = size;
+  const tileContext = tile.getContext("2d");
+  if (tileContext === null) return null;
+  tileContext.fillStyle = color;
+  tileContext.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
+  tileContext.fill();
+  const pattern = context.createPattern(tile, "repeat");
+  gridTile = pattern === null ? null : { key, pattern };
+  return pattern;
+}
+
+// One dot tile repeated by a pattern, in device pixels: a single fill per frame. One arc per dot cost up to
+// 250 ms a frame in WebKitGTK when zoomed out.
 function drawGrid(context: CanvasRenderingContext2D, scene: Scene, ink: Ink): void {
-  const { view } = scene;
-  const step = view.zoom < 0.5 ? GRID * 4 : GRID;
-  const radius = 1.4 / view.zoom;
-  const left = Math.floor(view.x / step) * step;
-  const top = Math.floor(view.y / step) * step;
-  const right = view.x + scene.width / view.zoom;
-  const bottom = view.y + scene.height / view.zoom;
-  context.fillStyle = ink.colors.ink;
+  const { view, ratio } = scene;
+  const step = gridStep(view.zoom);
+  const spacing = step * view.zoom * ratio;
+  const size = Math.ceil(spacing);
+  const pattern = dotPattern(context, size, DOT_RADIUS * ratio, ink.colors.ink);
+  if (pattern === null) return;
+  const offsetX = (Math.floor(view.x / step) * step - view.x) * view.zoom * ratio;
+  const offsetY = (Math.floor(view.y / step) * step - view.y) * view.zoom * ratio;
+  pattern.setTransform(
+    new DOMMatrix().translateSelf(offsetX - spacing / 2, offsetY - spacing / 2).scaleSelf(spacing / size),
+  );
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.fillStyle = pattern;
   context.globalAlpha = 0.22;
-  context.beginPath();
-  for (let x = left; x <= right; x += step) {
-    for (let y = top; y <= bottom; y += step) {
-      context.moveTo(x + radius, y);
-      context.arc(x, y, radius, 0, Math.PI * 2);
-    }
-  }
-  context.fill();
+  context.fillRect(0, 0, scene.width * ratio, scene.height * ratio);
   context.globalAlpha = 1;
 }
 
@@ -113,6 +144,7 @@ export function drawScene(
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.fillStyle = ink.canvas;
   context.fillRect(0, 0, scene.width, scene.height);
+  if (scene.grid === true) drawGrid(context, scene, ink);
   context.setTransform(
     ratio * view.zoom,
     0,
@@ -121,6 +153,5 @@ export function drawScene(
     -view.x * view.zoom * ratio,
     -view.y * view.zoom * ratio,
   );
-  if (scene.grid === true) drawGrid(context, scene, ink);
   for (const step of paintOrder(scene.items)) drawStep(context, step, ink, onImage);
 }

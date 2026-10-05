@@ -13,6 +13,7 @@ and `src/recognize/highlight.ts` (a marker stroke over a text line becomes a hig
 | R4 | A horizontal marker stroke inside the band of line k of a text, with at least half of it over the line, becomes a mark on that text with lines [k, k] (or [first, last] when it spans several lines) | Property test, 1000 random texts and strokes | Construction |
 | R5 | Marker strokes that do not overlap any text line return no target | Property test, 1000 cases | Construction |
 | R6 | The highlight spans exactly the overlapped part of the line in `u` (clamped to [0, 1]; full line when ≥ 85 % is covered) | Property test, 1000 cases | The overlap computed in the test |
+| R7 | A pen stroke that snapped to a shape during a pause becomes a freehand stroke again when the pen moves on, and keeps every point drawn before and after the pause | Example test with mocked timers (`tests/editor.test.ts`): a straight stroke, a pause, then a turn | The points fed to the pen |
 
 ## Corpus
 
@@ -34,6 +35,7 @@ R1 ≥ 95 % per class, R2 ≤ 5 % per kind, R3 100 % of correctly classified str
 | R4, R6 | 2026-10-02 | 1000 / 1000 |
 | R5 | 2026-10-02 | 1000 / 1000 |
 | Real app | 2026-10-02 | headless: a wobbly box, a loop and a one-stroke arrow held still for 700 ms snapped to box, ellipse and arrow; a wave without hold stayed a stroke; a marker stroke over the first half of a text became a highlight on that part |
+| R7 | 2026-10-04 | passes; the same test fails on the previous pen, which dropped everything after the snap |
 
 ## Known gaps
 
