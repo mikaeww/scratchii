@@ -25,7 +25,13 @@ function option(match: Match, index: number, active: boolean): HTMLElement {
   return row;
 }
 
-export function mountPalette(commands: () => readonly Command[]): () => void {
+interface Parts {
+  readonly dialog: HTMLDialogElement;
+  readonly input: HTMLInputElement;
+  readonly list: HTMLElement;
+}
+
+function build(): Parts {
   const dialog = document.createElement("dialog");
   dialog.className = "dialog palette";
   dialog.setAttribute("aria-label", text("palette.title"));
@@ -42,20 +48,25 @@ export function mountPalette(commands: () => readonly Command[]): () => void {
   list.setAttribute("role", "listbox");
   dialog.append(input, list);
   document.body.append(dialog);
+  return { dialog, input, list };
+}
+
+function emptyHint(): HTMLElement {
+  const hint = document.createElement("p");
+  hint.className = "dialog-hint";
+  hint.textContent = text("palette.none");
+  return hint;
+}
+
+export function mountPalette(commands: () => readonly Command[]): () => void {
+  const { dialog, input, list } = build();
   let matches: Match[] = [];
   let active = 0;
-
   const show = (): void => {
     matches = rankCommands(input.value, commands()).slice(0, SHOWN);
     active = Math.min(active, Math.max(0, matches.length - 1));
     list.replaceChildren(...matches.map((match, index) => option(match, index, index === active)));
-    if (matches.length === 0)
-      list.append(
-        Object.assign(document.createElement("p"), {
-          className: "dialog-hint",
-          textContent: text("palette.none"),
-        }),
-      );
+    if (matches.length === 0) list.append(emptyHint());
     input.setAttribute("aria-activedescendant", matches.length === 0 ? "" : `palette-option-${active}`);
   };
   const run = (match: Match | undefined): void => {
@@ -63,7 +74,6 @@ export function mountPalette(commands: () => readonly Command[]): () => void {
     dialog.close();
     match.command.run(match.argument);
   };
-
   input.addEventListener("input", () => {
     active = 0;
     show();
@@ -71,8 +81,7 @@ export function mountPalette(commands: () => readonly Command[]): () => void {
   input.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
-      const step = event.key === "ArrowDown" ? 1 : -1;
-      active = (active + step + matches.length) % Math.max(1, matches.length);
+      active = (active + (event.key === "ArrowDown" ? 1 : -1) + matches.length) % Math.max(1, matches.length);
       show();
     } else if (event.key === "Enter") {
       event.preventDefault();
@@ -85,8 +94,7 @@ export function mountPalette(commands: () => readonly Command[]): () => void {
   });
   const open = (): void => {
     if (dialog.open) return;
-    input.value = "";
-    active = 0;
+    [input.value, active] = ["", 0];
     show();
     dialog.showModal();
     input.focus();
