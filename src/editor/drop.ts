@@ -1,4 +1,4 @@
-// Pictures and board files that arrive by drag and drop or paste.
+// Pictures, PDFs and board files that arrive by drag and drop or paste.
 import { createItem, type ImageItem } from "../model/item.ts";
 import type { Editor } from "./editor.ts";
 import { screenToWorld, type Vec } from "./viewport.ts";
@@ -80,12 +80,20 @@ export async function placeImages(editor: Editor, files: readonly File[], at: Ve
 
 export interface Arrivals {
   readonly onBoardFile: (file: File) => void;
+  readonly onPdf: (file: File, at: Vec) => void;
   readonly onError: (error: unknown) => void;
 }
 
-function sort(files: readonly File[], arrivals: Arrivals): File[] {
+function isPdf(file: File): boolean {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+function sort(files: readonly File[], arrivals: Arrivals, at: Vec): File[] {
   const pictures = files.filter((file) => file.type.startsWith("image/"));
-  for (const file of files) if (file.name.endsWith(".scratchii")) arrivals.onBoardFile(file);
+  for (const file of files) {
+    if (file.name.endsWith(".scratchii")) arrivals.onBoardFile(file);
+    else if (isPdf(file)) arrivals.onPdf(file, at);
+  }
   return pictures;
 }
 
@@ -97,14 +105,15 @@ export function attachDrop(canvas: HTMLCanvasElement, editor: Editor, arrivals: 
     event.preventDefault();
     const box = canvas.getBoundingClientRect();
     const at = screenToWorld(editor.view, [event.clientX - box.left, event.clientY - box.top]);
-    const pictures = sort([...(event.dataTransfer?.files ?? [])], arrivals);
+    const pictures = sort([...(event.dataTransfer?.files ?? [])], arrivals, at);
     if (pictures.length > 0) placeImages(editor, pictures, at).catch(arrivals.onError);
   });
   document.addEventListener("paste", (event) => {
-    const pictures = [...(event.clipboardData?.files ?? [])].filter((file) => file.type.startsWith("image/"));
-    if (pictures.length === 0) return;
+    const files = [...(event.clipboardData?.files ?? [])];
+    if (!files.some((file) => file.type.startsWith("image/") || isPdf(file))) return;
     event.preventDefault();
     const centre = screenToWorld(editor.view, [canvas.clientWidth / 2, canvas.clientHeight / 2]);
-    placeImages(editor, pictures, centre).catch(arrivals.onError);
+    const pictures = sort(files, arrivals, centre);
+    if (pictures.length > 0) placeImages(editor, pictures, centre).catch(arrivals.onError);
   });
 }

@@ -30,6 +30,7 @@ import { mountStage } from "./ui/stage.ts";
 import { stylePanel } from "./ui/style-panel.ts";
 import { mountTextEditor } from "./ui/editing/text-editor.ts";
 import { attachTablePaste } from "./ui/editing/tables.ts";
+import { runPdfImport } from "./ui/editing/pdf.ts";
 import { activeLanguage, text } from "./ui/text.ts";
 import { showToast } from "./ui/toast.ts";
 import { mountChrome } from "./ui/toolbar.ts";
@@ -102,6 +103,7 @@ async function start(): Promise<void> {
   chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {
     onBoardFile: actions.openFile,
+    onPdf: (file, at) => void runPdfImport(editor, file, at),
     onError: (error) => {
       console.error(error);
       showToast(`${text("image.failed")} ${error instanceof Error ? error.message : String(error)}`, "error");

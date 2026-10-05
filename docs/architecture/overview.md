@@ -12,6 +12,7 @@ src/calc/             maths expressions, answers to a line ending in "=", IPv4 s
                       the edit text of graphs and charts; pure functions
 src/diagram/          lines attached to items (attach targets, points on outlines, rerouting, ADR 0007) and
                       flowcharts from Mermaid-style text: reading, layered layout, building items, blocks
+src/import/           PDF pages as pictures with pdf.js, loaded on the first import (ADR 0008)
 src/templates/        page templates (Cornell notes, minutes, cheat sheet, week plan) from existing item types
 src/table/            the cell grid of table items: cell boxes, rows and columns, fitting text, pasted cells
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions

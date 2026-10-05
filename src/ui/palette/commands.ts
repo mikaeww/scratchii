@@ -6,6 +6,7 @@ import { createItem, type ChartItem, type GraphItem } from "../../model/item.ts"
 import { MAX_FUNCTIONS } from "../../model/validate.ts";
 import { BUILDING_BLOCKS, DIAGRAM_STARTER } from "../../diagram/blocks.ts";
 import { diagramRequest, placeDiagram } from "../editing/diagrams.ts";
+import { pickPdf } from "../editing/pdf.ts";
 import { placeTable, tableSize } from "../editing/tables.ts";
 import { chartRequest } from "../menus/item-text.ts";
 import type { Paper } from "../../render/canvas.ts";
@@ -113,6 +114,17 @@ function graphCommands({ editor, centre, openText }: PaletteContext): Command[] 
   ];
 }
 
+function pdfCommand({ editor, centre }: PaletteContext): Command {
+  return {
+    id: "insert.pdf",
+    label: text("palette.pdf"),
+    words: ["pdf importieren", "pdf", "folien", "slides", "skript", "formular"],
+    run: () => {
+      void pickPdf(editor, centre);
+    },
+  };
+}
+
 function tableCommand({ editor, centre }: PaletteContext): Command {
   return {
     id: "insert.table",
@@ -165,6 +177,7 @@ export function paletteCommands(context: PaletteContext): Command[] {
   return [
     ...toolCommands(context),
     tableCommand(context),
+    pdfCommand(context),
     ...graphCommands(context),
     ...diagramCommands(context),
     ...templateCommands(context),

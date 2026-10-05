@@ -3,7 +3,7 @@
 import { markerPath, strokePath } from "../geometry/freehand.ts";
 import { boxOutline, lineOutline } from "../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING, SHAPE_WIDTH } from "../geometry/widths.ts";
-import type { Color, Item, NoteItem } from "../model/item.ts";
+import type { Color, ImageItem, Item, NoteItem } from "../model/item.ts";
 import { chartOps, graphOps } from "./items/charts.ts";
 import { lineLabelOps, shapeLabelOps } from "./items/labels.ts";
 import { tableOps } from "./items/tables.ts";
@@ -76,6 +76,22 @@ function noteOps(item: NoteItem): DrawOp[] {
   ];
 }
 
+// A faint edge, so a white page from a PDF stays visible on the white canvas.
+function imageOps(item: ImageItem): DrawOp[] {
+  return [
+    { kind: "image", src: item.src, width: item.width, height: item.height },
+    {
+      kind: "path",
+      d: `M0 0H${item.width}V${item.height}H0Z`,
+      fill: null,
+      stroke: "ink",
+      width: 1.5,
+      shadow: false,
+      opacity: 0.25,
+    },
+  ];
+}
+
 function build(item: Item): readonly DrawOp[] {
   switch (item.type) {
     case "stroke": {
@@ -120,7 +136,7 @@ function build(item: Item): readonly DrawOp[] {
     case "note":
       return noteOps(item);
     case "image":
-      return [{ kind: "image", src: item.src, width: item.width, height: item.height }];
+      return imageOps(item);
     case "graph":
       return graphOps(item);
     case "chart":

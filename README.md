@@ -35,6 +35,8 @@ be chosen in the settings.
 - A library of all boards with search over titles, tags and text, and thumbnails
 - Open and save `.scratchii` files, export as PNG, SVG or PDF
 - Sync between the desktop app and browsers through your own small server, edit by edit, without losing changes
+- PDFs (lecture slides, forms, regulations) dropped onto the canvas or picked in the palette become one page
+  picture each, ready to write on
 - Templates for Cornell notes, minutes, a cheat sheet and a week plan; plain, dotted, squared or lined paper
 - Undo for everything, keyboard shortcuts
 
@@ -114,6 +116,7 @@ request.
 npm run check                       # format, lint, types, structure limits, tests, Rust format and lint
 node tools/render.ts out.png board  # headless screenshot; scenes are listed in the file
 node tools/ocr-check.ts             # measures handwriting recognition on 20 drawn words
+node tools/pdf-check.ts             # imports generated PDFs in the running app, headless, and checks the pages
 ```
 
 The screenshots above are `tools/render.ts` output with its made-up sample data. The app is in `src/`, the sync

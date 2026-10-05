@@ -26,6 +26,7 @@
 | [verification/study-tools/connectors.md](verification/study-tools/connectors.md) | Labels and lines attached to items |
 | [verification/study-tools/diagrams.md](verification/study-tools/diagrams.md) | Flowcharts from text: reading, layout, building |
 | [verification/study-tools/templates.md](verification/study-tools/templates.md) | Page templates and paper backgrounds |
+| [verification/study-tools/pdf.md](verification/study-tools/pdf.md) | PDF import: pages as pictures (ADR 0008) |
 
 ## Accessibility check
 
