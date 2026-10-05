@@ -1,12 +1,11 @@
 // The maths behind graph and chart items: tick values, a function sampled and clipped to its view, and the
 // plain text a graph or chart is edited as. Not here: drawing (src/render/items/charts.ts).
+import { MAX_FUNCTIONS, MAX_VALUES } from "../model/validate.ts";
 import { ExpressionError, evaluate, parseExpression } from "./expression.ts";
 
 export type Range = readonly [xMin: number, xMax: number, yMin: number, yMax: number];
 type Point = readonly [number, number];
 
-export const MAX_FUNCTIONS = 6;
-export const MAX_VALUES = 40;
 const SAMPLES = 400;
 
 export class PlotTextError extends Error {

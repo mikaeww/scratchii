@@ -3,7 +3,7 @@ import "./ui/theme/tokens.css";
 import "./ui/theme/controls.css";
 import "./ui/theme/overlays.css";
 import { Editor } from "./editor/editor.ts";
-import { attachInput, type Tools } from "./editor/input.ts";
+import { attachInput, isTyping, type Tools } from "./editor/input.ts";
 import { createEraser } from "./editor/tools/eraser.ts";
 import { createHand } from "./editor/tools/hand.ts";
 import { createMarker } from "./editor/tools/marker.ts";
@@ -27,7 +27,8 @@ import { editAsText } from "./ui/menus/item-text.ts";
 import { mountTextDialog } from "./ui/menus/text-dialog.ts";
 import { mountStage } from "./ui/stage.ts";
 import { stylePanel } from "./ui/style-panel.ts";
-import { mountTextEditor } from "./ui/text-editor.ts";
+import { mountTextEditor } from "./ui/editing/text-editor.ts";
+import { attachTablePaste } from "./ui/editing/tables.ts";
 import { activeLanguage, text } from "./ui/text.ts";
 import { showToast } from "./ui/toast.ts";
 import { mountChrome } from "./ui/toolbar.ts";
@@ -91,6 +92,7 @@ async function start(): Promise<void> {
   const actions = boardActions(editor, ink, database, stage);
   const centre = (): Vec => screenToWorld(editor.view, [canvas.clientWidth / 2, canvas.clientHeight / 2]);
   const openPalette = mountPalette(() => paletteCommands({ editor, centre, openText }));
+  attachTablePaste(editor, centre, isTyping);
   mountChrome(chrome, editor, canvas, boardPanel(editor, actions, openPalette));
   chrome.append(stylePanel(editor));
   attachDrop(canvas, editor, {

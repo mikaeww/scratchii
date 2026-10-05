@@ -16,6 +16,7 @@ import {
   type PolygonItem,
   type GraphItem,
   type ChartItem,
+  type TableItem,
   type ShapeItem,
   type Size,
   type StrokeItem,
@@ -98,6 +99,25 @@ const MAKERS: Readonly<Record<ItemType, (random: Random) => Item>> = {
       kind: random() < 0.5 ? "bar" : "line",
       labels: Array.from({ length: count }, (_, i) => `L${i}`),
       values: Array.from({ length: count }, () => between(random, -100, 100)),
+    });
+  },
+  table: (random) => {
+    const [rows, columns] = [1 + Math.floor(random() * 12), 1 + Math.floor(random() * 8)];
+    const shares = (count: number): number[] => {
+      const raw = Array.from({ length: count }, () => between(random, 0.2, 1));
+      const sum = raw.reduce((a, b) => a + b, 0);
+      return raw.map((r) => r / sum);
+    };
+    return createItem<TableItem>({
+      ...base(random),
+      type: "table",
+      width: between(random, 1, 1200),
+      height: between(random, 1, 900),
+      cells: Array.from({ length: rows }, (_, r) =>
+        Array.from({ length: columns }, (_, c) => (random() < 0.3 ? "" : `${r}:${c}`)),
+      ),
+      columns: shares(columns),
+      rows: shares(rows),
     });
   },
   line: (random) => line(random, "line"),

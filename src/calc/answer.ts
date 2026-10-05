@@ -1,5 +1,5 @@
 // What a line of text ending in "=" asks for: a number, a number in another base, or an IPv4 subnet. Not here:
-// putting the answer into the text (src/ui/text-editor.ts) or wording the subnet (the interface text).
+// putting the answer into the text (src/ui/editing/text-editor.ts) or wording the subnet (the interface text).
 import { ExpressionError, evaluate, parseExpression, usesX } from "./expression.ts";
 import { readSubnet, type Subnet } from "./subnet.ts";
 

@@ -230,6 +230,45 @@ async function graphs(page: Page): Promise<void> {
   await page.mouse.click(1200, 760);
 }
 
+// A table from the palette filled with Tab and Enter, a bar chart from its right-click menu, and a second table
+// pasted as tab-separated text the way a spreadsheet puts it on the clipboard.
+async function tables(page: Page): Promise<void> {
+  await command(page, "tabelle 4x3");
+  await tool(page, "v");
+  await drag(page, [640, 400], [380, 300]);
+  await page.mouse.dblclick(200, 225);
+  const cells = [
+    "Fach",
+    "Note",
+    "ECTS",
+    "Mathe",
+    "1,7",
+    "5",
+    "BWL",
+    "2,3",
+    "5",
+    "Netzwerktechnik",
+    "1,3",
+    "10",
+  ];
+  for (const cell of cells) {
+    await page.keyboard.type(cell);
+    await page.keyboard.press("Tab");
+  }
+  await page.keyboard.press("Escape");
+  await page.mouse.click(200, 225, { button: "right" });
+  await page.click("text=Bar chart from this table");
+  await page.evaluate(() => {
+    const data = new DataTransfer();
+    data.setData(
+      "text/plain",
+      "Aufgabe\tFrist\tWer\nAntrag prüfen\t12.10.\tMika\nBescheid schreiben\t19.10.\tTeam",
+    );
+    document.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data }));
+  });
+  await page.mouse.click(1200, 760);
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
   german: { language: "de", grid: true },
@@ -245,6 +284,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   shapes,
   calc,
   graphs,
+  tables,
   palette: async (page) => {
     await page.keyboard.press("Control+k");
     await page.keyboard.type("kre");

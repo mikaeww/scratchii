@@ -73,6 +73,7 @@ export function hitItem(item: Item, point: Vec, tolerance: number): boolean {
     case "image":
     case "graph":
     case "chart":
+    case "table":
       return contains(grow(shapeBox(item), reach), point);
     // Marks are reached through their text (context menu), never picked on their own.
     case "mark":

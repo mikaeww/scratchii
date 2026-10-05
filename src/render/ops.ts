@@ -5,6 +5,7 @@ import { boxOutline, lineOutline } from "../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE, NOTE_PADDING, SHAPE_WIDTH } from "../geometry/widths.ts";
 import type { Color, Item, NoteItem } from "../model/item.ts";
 import { chartOps, graphOps } from "./items/charts.ts";
+import { tableOps } from "./items/tables.ts";
 import { wrapText } from "./measure.ts";
 
 export interface PathOp {
@@ -123,6 +124,8 @@ function build(item: Item): readonly DrawOp[] {
       return graphOps(item);
     case "chart":
       return chartOps(item);
+    case "table":
+      return tableOps(item);
     // Marks depend on their target and are drawn by render/marks.ts.
     case "mark":
       return [];

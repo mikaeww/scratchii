@@ -3,7 +3,9 @@ import { loadOwnMarks } from "../../annotate/custom.ts";
 import { PRESETS, markColor, type Preset } from "../../annotate/presets.ts";
 import { deleteSelected, duplicateSelected, restack, selectAll } from "../../editor/commands.ts";
 import type { Editor } from "../../editor/editor.ts";
-import { screenToWorld } from "../../editor/viewport.ts";
+import { screenToWorld, type Vec } from "../../editor/viewport.ts";
+import { cellAt } from "../../table/grid.ts";
+import { tableEntries } from "./table-menu.ts";
 import { itemAt } from "../../geometry/hit.ts";
 import { updateItem, type Item, type StrokeItem, type TextItem } from "../../model/item.ts";
 import type { Ink } from "../../render/ink.ts";
@@ -124,13 +126,30 @@ export interface MenuDialogs {
   readonly toText: (strokes: readonly StrokeItem[]) => void;
 }
 
+interface Target {
+  readonly hit: Item | null;
+  readonly world: Vec;
+}
+
+function tableEntriesAt(editor: Editor, { hit, world }: Target, close: () => void): HTMLElement[] {
+  const cell = hit?.type === "table" ? cellAt(hit, world) : null;
+  if (hit?.type !== "table" || cell === null) return [];
+  const closing = (label: TextKey, action: () => void): HTMLElement =>
+    entry(label, () => {
+      action();
+      close();
+    });
+  return [...tableEntries(editor, hit, cell, closing), divider()];
+}
+
 function entriesFor(
   editor: Editor,
-  hit: Item | null,
+  target: Target,
   ink: Ink,
   dialogs: MenuDialogs,
   close: () => void,
 ): HTMLElement[] {
+  const { hit } = target;
   if (hit === null) {
     return [
       entry("menu.selectAll", () => {
@@ -152,7 +171,7 @@ function entriesFor(
           }),
         ];
   const forText = hit.type === "text" ? textEntries(editor, hit, ink, dialogs.pad, close) : [];
-  return [...forText, ...toText, ...itemEntries(editor, close)];
+  return [...forText, ...tableEntriesAt(editor, target, close), ...toText, ...itemEntries(editor, close)];
 }
 
 export function mountContextMenu(
@@ -178,7 +197,7 @@ export function mountContextMenu(
     const hit = itemAt(editor.scene(), world, REACH / editor.view.zoom);
     // Right-clicking inside a selection keeps it, so several strokes can be converted at once.
     if (hit !== null && !editor.selection.has(hit.id)) editor.setSelection([hit.id]);
-    menu.replaceChildren(...entriesFor(editor, hit, ink, dialogs, close));
+    menu.replaceChildren(...entriesFor(editor, { hit, world }, ink, dialogs, close));
     menu.hidden = false;
     const left = Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8);
     const top = Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8);

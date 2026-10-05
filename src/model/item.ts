@@ -71,6 +71,16 @@ export interface ChartItem extends ItemBase {
   readonly values: readonly number[];
 }
 
+// Rows and columns are fractions of the box, so moving and scaling only touch the box (src/table/grid.ts).
+export interface TableItem extends ItemBase {
+  readonly type: "table";
+  readonly width: number;
+  readonly height: number;
+  readonly cells: readonly (readonly string[])[];
+  readonly columns: readonly number[];
+  readonly rows: readonly number[];
+}
+
 // Start and end relative to the item origin; the start is (0, 0) when drawn.
 export interface LineItem extends ItemBase {
   readonly type: "line" | "arrow";
@@ -132,7 +142,8 @@ export type Item =
   | MarkItem
   | ImageItem
   | GraphItem
-  | ChartItem;
+  | ChartItem
+  | TableItem;
 export type ItemType = Item["type"];
 export const ITEM_TYPES: readonly ItemType[] = [
   "stroke",
@@ -147,6 +158,7 @@ export const ITEM_TYPES: readonly ItemType[] = [
   "image",
   "graph",
   "chart",
+  "table",
 ];
 
 type Fresh<T extends Item> = Omit<T, "id" | "seed" | "version" | "nonce" | "deleted" | "updated">;

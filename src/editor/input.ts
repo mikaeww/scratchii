@@ -21,7 +21,7 @@ function sampleOf(canvas: HTMLCanvasElement, editor: Editor, event: PointerEvent
   };
 }
 
-function isTyping(target: EventTarget | null): boolean {
+export function isTyping(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))

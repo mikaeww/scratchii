@@ -3,6 +3,8 @@ import { insertAt } from "../../editor/commands.ts";
 import type { Editor, ToolName } from "../../editor/editor.ts";
 import type { Vec } from "../../editor/viewport.ts";
 import { createItem, type ChartItem, type GraphItem } from "../../model/item.ts";
+import { MAX_FUNCTIONS } from "../../model/validate.ts";
+import { placeTable, tableSize } from "../editing/tables.ts";
 import { chartRequest } from "../menus/item-text.ts";
 import type { TextRequest } from "../menus/text-dialog.ts";
 import { text } from "../text.ts";
@@ -80,7 +82,7 @@ function graphCommands({ editor, centre, openText }: PaletteContext): Command[] 
           color: "ink",
           size: "m",
           ...GRAPH_SIZE,
-          functions: functions.slice(0, 6),
+          functions: functions.slice(0, MAX_FUNCTIONS),
           range: [-10, 10, -6, 6],
         });
         insertAt(editor, [item], centre());
@@ -105,6 +107,20 @@ function graphCommands({ editor, centre, openText }: PaletteContext): Command[] 
   ];
 }
 
+function tableCommand({ editor, centre }: PaletteContext): Command {
+  return {
+    id: "insert.table",
+    label: text("palette.table"),
+    words: ["tabelle", "table", "raster", "grid", "matrix"],
+    argument: text("palette.tableArgument"),
+    run: (argument) => {
+      const [rows, columns] = tableSize(argument);
+      const cells = Array.from({ length: rows }, () => Array.from({ length: columns }, () => ""));
+      placeTable(editor, cells, centre());
+    },
+  };
+}
+
 export function paletteCommands(context: PaletteContext): Command[] {
-  return [...toolCommands(context), ...graphCommands(context)];
+  return [...toolCommands(context), tableCommand(context), ...graphCommands(context)];
 }

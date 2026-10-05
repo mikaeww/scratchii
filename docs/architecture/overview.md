@@ -10,12 +10,14 @@ src/render/           DrawOp lists per item (items/ for graphs and charts), canv
 src/annotate/          marks: built-in presets, layout on text lines, own marks
 src/calc/             maths expressions, answers to a line ending in "=", IPv4 subnets, plot sampling and ticks,
                       the edit text of graphs and charts; pure functions
+src/table/            the cell grid of table items: cell boxes, rows and columns, fitting text, pasted cells
 src/recognize/         shape snapping and highlight detection on finished strokes, pure functions
 src/sync/             sync client, one sync round (Syncer), the 5 s loop, device sync settings
 server/               sync server: node:http + node:sqlite, serves dist/ too
 src/storage/          IndexedDB boards and thumbnails, the session (autosave, switching boards), library
                       search, browser file pick and download
-src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, text editor, stage, toasts, text,
+src/ui/               DOM chrome: theme/ (tokens, controls), toolbar, style panel, stage, toasts, text,
+                      editing/ (the text field for texts, notes and table cells; new tables),
                       palette/ (Ctrl+K: the command list and its ranking)
 ```
 

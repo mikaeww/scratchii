@@ -10,6 +10,7 @@ import {
   type ItemBase,
   type ItemType,
   type ChartItem,
+  type TableItem,
   type LineItem,
   type MarkItem,
   type MarkStroke,
@@ -139,8 +140,8 @@ function corners(value: unknown, path: string): readonly (readonly [number, numb
   return read;
 }
 
-const MAX_FUNCTIONS = 6;
-const MAX_VALUES = 40;
+export const MAX_FUNCTIONS = 6;
+export const MAX_VALUES = 40;
 const MAX_LABEL = 200;
 
 function label(value: unknown, path: string): string {
@@ -163,6 +164,36 @@ function chartData(fields: Fields, path: string): Pick<ChartItem, "labels" | "va
   const values = list(fields.values, `${path}.values`, finite, MAX_VALUES);
   if (labels.length !== values.length) throw new ValidationError(`${path}.values`, "one value per label");
   return { labels, values };
+}
+
+export const MAX_ROWS = 60;
+export const MAX_COLUMNS = 20;
+const MAX_CELL = 2000;
+
+function cell(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.length > MAX_CELL)
+    throw new ValidationError(path, "expected a cell text");
+  return value;
+}
+
+function fractions(value: unknown, path: string, count: number): number[] {
+  const read = list(value, path, positive, count);
+  const sum = read.reduce((a, b) => a + b, 0);
+  if (read.length !== count || read.some((f) => f === 0) || Math.abs(sum - 1) > 1e-6)
+    throw new ValidationError(path, `expected ${count} shares above 0 that add up to 1`);
+  return read;
+}
+
+function tableGrid(fields: Fields, path: string): Pick<TableItem, "cells" | "columns" | "rows"> {
+  const cells = list(fields.cells, `${path}.cells`, (row, p) => list(row, p, cell, MAX_COLUMNS), MAX_ROWS);
+  const width = cells[0]?.length ?? 0;
+  if (cells.length === 0 || width === 0 || cells.some((row) => row.length !== width))
+    throw new ValidationError(`${path}.cells`, "expected rows of equal length, at least one cell");
+  return {
+    cells,
+    columns: fractions(fields.columns, `${path}.columns`, width),
+    rows: fractions(fields.rows, `${path}.rows`, cells.length),
+  };
 }
 
 function linePoints(value: unknown, path: string): LineItem["points"] {
@@ -241,6 +272,15 @@ const READERS: Readonly<Record<ItemType, readonly [readonly string[], Reader]>> 
       height: positive(f.height, `${p}.height`),
       kind: oneOf(f.kind, `${p}.kind`, ["bar", "line"] as const),
       ...chartData(f, p),
+    }),
+  ],
+  table: [
+    ["width", "height", "cells", "columns", "rows"],
+    (f, p) => ({
+      type: "table",
+      width: positive(f.width, `${p}.width`),
+      height: positive(f.height, `${p}.height`),
+      ...tableGrid(f, p),
     }),
   ],
   line: [["points"], (f, p) => ({ type: "line", points: linePoints(f.points, `${p}.points`) })],
