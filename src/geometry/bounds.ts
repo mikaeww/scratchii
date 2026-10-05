@@ -1,15 +1,19 @@
 // The world box an item covers, with and without the reach of its ink. Not here: hit tests (hit.ts).
 import type { Item } from "../model/item.ts";
 import { boxAround, grow, type Box } from "./box.ts";
+import { linePoints } from "./outline.ts";
 import { inkReach } from "./widths.ts";
 
 // The stored geometry only: points for strokes and lines, the box for everything else.
 export function shapeBox(item: Item): Box {
   switch (item.type) {
-    case "stroke":
+    case "stroke": {
+      const box = boxAround(item.points);
+      return { ...box, x: box.x + item.x, y: box.y + item.y };
+    }
     case "line":
     case "arrow": {
-      const box = boxAround(item.points);
+      const box = boxAround(linePoints(item));
       return { ...box, x: box.x + item.x, y: box.y + item.y };
     }
     // Marks follow their text and have no box of their own (src/annotate lays them out).

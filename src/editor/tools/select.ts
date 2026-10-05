@@ -5,9 +5,19 @@ import { boxFromPoints, contains, overlaps, type Box } from "../../geometry/box.
 import { itemAt } from "../../geometry/hit.ts";
 import { moveItem, scaleItem } from "../../geometry/transform.ts";
 import { detached } from "../../diagram/connect.ts";
-import { reviseItem, type Item } from "../../model/item.ts";
+import { bendThrough } from "../../geometry/outline.ts";
+import { reviseItem, type Item, type LineItem } from "../../model/item.ts";
 import type { Editor } from "../editor.ts";
-import { corner, geometryBox, handleAt, resizeBox, selectionBox, type Handle } from "../selection.ts";
+import {
+  bendable,
+  corner,
+  geometryBox,
+  handleAt,
+  onBendHandle,
+  resizeBox,
+  selectionBox,
+  type Handle,
+} from "../selection.ts";
 import type { Vec } from "../viewport.ts";
 import type { PointerSample, Tool } from "./tool.ts";
 
@@ -15,6 +25,7 @@ const REACH = 6;
 
 type Gesture =
   | { readonly kind: "move"; readonly start: Vec; readonly items: readonly Item[] }
+  | { readonly kind: "bend"; readonly line: LineItem }
   | {
       readonly kind: "resize";
       readonly handle: Handle;
@@ -31,8 +42,14 @@ function movable(editor: Editor): Item[] {
   return items.map((item) => (item.type === "line" || item.type === "arrow" ? detached(item, moving) : item));
 }
 
+// Bends beyond this many chord lengths fold the curve over itself.
+const MAX_BEND = 1.5;
+
 function begin(editor: Editor, sample: PointerSample): Gesture {
   const selected = movable(editor);
+  // Bending keeps the line's attachments; only moving a line on its own lets go of them.
+  const line = bendable(editor.selected());
+  if (line !== null && onBendHandle(line, editor.view, sample.screen)) return { kind: "bend", line };
   const box = selectionBox(selected);
   const handle = box === null ? null : handleAt(box, editor.view, sample.screen);
   const geometry = geometryBox(selected);
@@ -61,6 +78,14 @@ function begin(editor: Editor, sample: PointerSample): Gesture {
 
 function preview(editor: Editor, gesture: Gesture, sample: PointerSample): void {
   switch (gesture.kind) {
+    case "bend": {
+      const { line } = gesture;
+      const [a, b] = line.points;
+      const local: Vec = [sample.world[0] - line.x, sample.world[1] - line.y];
+      const bend = Math.max(-MAX_BEND, Math.min(MAX_BEND, bendThrough(a, b, local)));
+      editor.setDraft([{ ...line, bend }]);
+      return;
+    }
     case "move": {
       const dx = sample.world[0] - gesture.start[0];
       const dy = sample.world[1] - gesture.start[1];

@@ -1,7 +1,16 @@
 // The pen: one pointer stroke becomes one stroke item. Holding the pen still at the end of a stroke turns a
-// recognised scribble into a clean shape (src/recognize/shapes.ts), committed when the pen lifts; moving on
-// keeps drawing freehand.
-import { createItem, type Item, type StrokeItem, type StrokePoint } from "../../model/item.ts";
+// recognised scribble into a clean shape (src/recognize/shapes.ts), or a head drawn after a shaft into one arrow
+// (src/recognize/arrows.ts), committed when the pen lifts; moving on keeps drawing freehand.
+import {
+  createItem,
+  updateItem,
+  type Item,
+  type LineItem,
+  type StrokeItem,
+  type StrokePoint,
+} from "../../model/item.ts";
+import { joinHead, recogniseHead } from "../../recognize/arrows.ts";
+import type { Point } from "../../recognize/path.ts";
 import { recogniseShape } from "../../recognize/shapes.ts";
 import type { Editor } from "../editor.ts";
 import type { Vec } from "../viewport.ts";
@@ -18,16 +27,39 @@ function relative(draft: StrokeItem, sample: PointerSample): StrokePoint {
   return [sample.world[0] - draft.x, sample.world[1] - draft.y, sample.hasPressure ? sample.pressure : 0.5];
 }
 
-function snap(editor: Editor, stroke: StrokeItem): Item | null {
-  const shape = recogniseShape(stroke.points.map(([x, y]) => [stroke.x + x, stroke.y + y] as const));
-  if (shape === null) return null;
+function worldPoints(stroke: StrokeItem): Point[] {
+  return stroke.points.map(([x, y]) => [stroke.x + x, stroke.y + y] as const);
+}
+
+function bent(item: Item, bend: number): Item {
+  return item.type === "line" || item.type === "arrow" ? ({ ...item, bend } satisfies LineItem) : item;
+}
+
+// A head drawn on its own turns the pen stroke drawn just before it into one arrow; that stroke goes.
+function joined(editor: Editor, stroke: StrokeItem, style: Editor["style"]): Item[] | null {
+  const head = recogniseHead(worldPoints(stroke));
+  const previous = editor.board.items.findLast((item) => !item.deleted && item.id !== stroke.id);
+  if (head === null || previous?.type !== "stroke" || previous.tip !== "pen") return null;
+  const arrow = joinHead(worldPoints(previous), head);
+  if (arrow === null) return null;
+  return [
+    bent(shapeItem(style, "arrow", arrow.from, arrow.to), arrow.bend),
+    updateItem(previous, { deleted: true }),
+  ];
+}
+
+function snap(editor: Editor, stroke: StrokeItem): Item[] | null {
   const style = { ...editor.style, color: stroke.color, size: stroke.size };
+  const arrow = joined(editor, stroke, style);
+  if (arrow !== null) return arrow;
+  const shape = recogniseShape(worldPoints(stroke));
+  if (shape === null) return null;
   if ("box" in shape) {
     const { x, y, width, height } = shape.box;
-    return shapeItem(style, shape.kind, [x, y], [x + width, y + height]);
+    return [shapeItem(style, shape.kind, [x, y], [x + width, y + height])];
   }
-  if (shape.kind === "polygon") return polygonItem(style, shape.corners);
-  return shapeItem(style, shape.kind, shape.from, shape.to);
+  if (shape.kind === "polygon") return [polygonItem(style, shape.corners)];
+  return [bent(shapeItem(style, shape.kind, shape.from, shape.to), shape.bend)];
 }
 
 function startStroke(editor: Editor, sample: PointerSample): StrokeItem {
@@ -53,7 +85,7 @@ function gap(editor: Editor, draft: StrokeItem, sample: PointerSample): number {
 
 export function createPen(editor: Editor, snapping: () => boolean): Tool {
   let draft: StrokeItem | null = null;
-  let snapped: Item | null = null;
+  let snapped: Item[] | null = null;
   let rest: { at: Vec; timer: ReturnType<typeof setTimeout> } | null = null;
   const stopResting = (): void => {
     if (rest !== null) clearTimeout(rest.timer);
@@ -64,7 +96,7 @@ export function createPen(editor: Editor, snapping: () => boolean): Tool {
     if (!snapping()) return;
     const timer = setTimeout(() => {
       snapped = draft === null ? null : snap(editor, draft);
-      if (snapped !== null) editor.setDraft([snapped]);
+      if (snapped !== null) editor.setDraft(snapped);
     }, HOLD_MS);
     rest = { at: screen, timer };
   };
@@ -94,9 +126,9 @@ export function createPen(editor: Editor, snapping: () => boolean): Tool {
       if (moved) restAt(sample.screen);
     },
     up() {
-      const finished = snapped ?? draft;
+      const finished = snapped ?? (draft === null ? null : [draft]);
       reset();
-      if (finished !== null) editor.commit([finished]);
+      if (finished !== null) editor.commit(finished);
     },
     cancel: reset,
   };

@@ -1,12 +1,13 @@
-// Classifies one pen stroke as a line, arrow, box, ellipse or polygon, or as nothing, and cleans it up: nearly
-// round becomes a circle, nearly square a square, nearly level lines level. Heuristics on a resampled path,
+// Classifies one pen stroke as a line, arrow (straight or with one bend), box, ellipse or polygon, or as nothing,
+// and cleans it up: nearly round becomes a circle, nearly square a square, nearly level lines level. Heuristics on a resampled path,
 // tuned on generated strokes (docs/verification/recognize.md); no learning.
 import { boxAround, type Box } from "../geometry/box.ts";
 import { distance, pathLength, resample, type Point } from "./path.ts";
+import { curveBend } from "./curves.ts";
 import { recognisePolygon } from "./polygons.ts";
 
 export type Shape =
-  | { readonly kind: "line" | "arrow"; readonly from: Point; readonly to: Point }
+  | { readonly kind: "line" | "arrow"; readonly from: Point; readonly to: Point; readonly bend: number }
   | { readonly kind: "rect" | "ellipse"; readonly box: Box }
   | { readonly kind: "polygon"; readonly corners: readonly Point[] };
 
@@ -55,10 +56,12 @@ function arrow(points: readonly Point[], length: number): Shape | null {
   const shaftLength = pathLength(shaft);
   const head = points.slice(tipIndex);
   const headLength = length - shaftLength;
-  if (shaftLength === 0 || !straight(shaft)) return null;
+  if (shaftLength === 0) return null;
+  const bend = straight(shaft) ? 0 : curveBend(shaft);
+  if (bend === null) return null;
   if (headLength < 0.12 * shaftLength || headLength > 0.9 * shaftLength) return null;
   const nearTip = head.every((point) => distance(point, tip) <= 0.45 * shaftLength);
-  return nearTip ? { kind: "arrow", from: start, to: tip } : null;
+  return nearTip ? { kind: "arrow", from: start, to: tip, bend } : null;
 }
 
 // Nearly square boxes become square around the same centre.
@@ -146,7 +149,7 @@ function closedShape(points: readonly Point[], raw: readonly Point[]): Shape | n
 }
 
 function straightened(shape: Shape | null): Shape | null {
-  if (shape === null || !("from" in shape)) return shape;
+  if (shape === null || !("from" in shape) || shape.bend !== 0) return shape;
   const [from, to] = levelled(shape.from, shape.to);
   return { ...shape, from, to };
 }
@@ -158,7 +161,10 @@ export function recogniseShape(raw: readonly Point[]): Shape | null {
   const start = points[0];
   const end = points.at(-1);
   if (start === undefined || end === undefined) return null;
-  if (straight(points)) return straightened({ kind: "line", from: start, to: end });
+  if (straight(points)) return straightened({ kind: "line", from: start, to: end, bend: 0 });
   if (distance(start, end) < CLOSED_GAP * length) return closedShape(points, raw);
-  return straightened(arrow(points, pathLength(points)));
+  const pointed = arrow(points, pathLength(points));
+  if (pointed !== null) return straightened(pointed);
+  const bend = curveBend(points);
+  return bend === null ? null : { kind: "line", from: start, to: end, bend };
 }

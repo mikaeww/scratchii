@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { bendThrough, curveMiddle, curvePoints } from "../src/geometry/outline.ts";
+import { joinHead, recogniseHead } from "../src/recognize/arrows.ts";
 import { recogniseShape, type Shape } from "../src/recognize/shapes.ts";
 import { seeded } from "./random.ts";
 import { boxAround } from "../src/geometry/box.ts";
@@ -7,7 +9,9 @@ import {
   NOT_SHAPE_KINDS,
   arrow,
   baseTriangle,
+  curved,
   leaningBox,
+  twoStrokeArrow,
   diamond,
   ellipse,
   line,
@@ -20,7 +24,9 @@ import {
 } from "./strokes.ts";
 
 const PER_CLASS = 500;
-const GENERATORS = { line, arrow, rect, ellipse, triangle, diamond, star } as const;
+const curvedLine = (random: () => number): Sample => curved(random, false);
+const curvedArrow = (random: () => number): Sample => curved(random, true);
+const GENERATORS = { line, arrow, rect, ellipse, triangle, diamond, star, curvedLine, curvedArrow } as const;
 // Triangles, diamonds and stars all come back as polygons.
 const EXPECTED: Readonly<Record<keyof typeof GENERATORS, Shape["kind"]>> = {
   line: "line",
@@ -30,6 +36,8 @@ const EXPECTED: Readonly<Record<keyof typeof GENERATORS, Shape["kind"]>> = {
   triangle: "polygon",
   diamond: "polygon",
   star: "polygon",
+  curvedLine: "line",
+  curvedArrow: "arrow",
 };
 
 function close(a: number, b: number, scale: number): boolean {
@@ -65,7 +73,8 @@ function accurate(sample: Sample, shape: Shape): boolean {
   if (from === undefined || to === undefined) return false;
   const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
   const near = (a: Point, b: Point): boolean => Math.hypot(a[0] - b[0], a[1] - b[1]) <= 0.1 * length;
-  return near(shape.from, from) && near(shape.to, to);
+  const bendRight = !("bend" in shape) || Math.abs(shape.bend - (sample.bend ?? 0)) <= 0.06;
+  return near(shape.from, from) && near(shape.to, to) && bendRight;
 }
 
 test("R1 + R3: generated shapes are recognised as their class, in the right place", (t) => {
@@ -218,4 +227,62 @@ test("R9: sloppy boxes come back level, steep ones as exact rectangles, triangle
   );
   for (const [kind, count] of Object.entries(counts))
     assert.ok(count >= PER_CLASS * 0.95, `${kind}: ${count}`);
+});
+
+test("R10: a head drawn after its shaft joins it into one arrow; heads elsewhere or pointing back do not", (t) => {
+  const random = seeded(36);
+  let joined = 0;
+  for (let i = 0; i < PER_CLASS; i++) {
+    const sample = twoStrokeArrow(random);
+    const head = recogniseHead(sample.head);
+    const arrow = head === null ? null : joinHead(sample.points, head);
+    const [from, to] = sample.ends ?? [];
+    if (head === null || arrow === null || from === undefined || to === undefined) continue;
+    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    const near = (a: Point, b: Point): boolean => Math.hypot(a[0] - b[0], a[1] - b[1]) <= 0.1 * length;
+    assert.ok(near(arrow.from, from) && near(arrow.to, to), `case ${i}: arrow misplaced`);
+    assert.ok(
+      Math.abs(arrow.bend - (sample.bend ?? 0)) <= 0.08,
+      `case ${i}: bend ${arrow.bend} vs ${sample.bend ?? 0}`,
+    );
+    joined++;
+    // The same head moved away from the shaft, or turned around, joins nothing.
+    const away = sample.head.map(([x, y]): Point => [x + length, y + length]);
+    const awayHead = recogniseHead(away);
+    assert.ok(awayHead === null || joinHead(sample.points, awayHead) === null, `case ${i}: joined from afar`);
+    // A shaft that stops halfway does not reach the head; a head mirrored at its tip points back.
+    const half = sample.points.slice(0, Math.floor(sample.points.length / 2));
+    assert.equal(joinHead(half, head), null, `case ${i}: joined a shaft that does not reach the head`);
+    const mirrored = recogniseHead(sample.head.map(([x, y]): Point => [2 * to[0] - x, 2 * to[1] - y]));
+    assert.ok(
+      mirrored === null || joinHead(sample.points, mirrored) === null,
+      `case ${i}: joined a head pointing back`,
+    );
+  }
+  t.diagnostic(`R10 joined ${joined}/${PER_CLASS}`);
+  assert.ok(joined >= PER_CLASS * 0.95, `only ${joined}/${PER_CLASS} joined`);
+  let wrong = 0;
+  for (const kind of NOT_SHAPE_KINDS) {
+    for (let i = 0; i < 100; i++) {
+      const shaft = line(random);
+      const scribble = notShape(random, kind);
+      const head = recogniseHead(scribble);
+      if (head !== null && joinHead(shaft.points, head) !== null) wrong++;
+    }
+  }
+  t.diagnostic(`R10 non-heads taken for heads: ${wrong}/${NOT_SHAPE_KINDS.length * 100}`);
+});
+
+test("G7: curve middle, control point and bend agree", () => {
+  const random = seeded(37);
+  for (let i = 0; i < 2000; i++) {
+    const a: Point = [between(random, -500, 500), between(random, -500, 500)];
+    const b: Point = [between(random, -500, 500), between(random, -500, 500)];
+    const bend = between(random, -1.5, 1.5);
+    const middle = curveMiddle(a, b, bend);
+    const sampled = curvePoints(a, b, bend, 2)[1] ?? [0, 0];
+    assert.ok(Math.hypot(sampled[0] - middle[0], sampled[1] - middle[1]) < 1e-9, `case ${i}: middle`);
+    if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 1)
+      assert.ok(Math.abs(bendThrough(a, b, middle) - bend) < 1e-9, `case ${i}: bend`);
+  }
 });

@@ -94,11 +94,14 @@ test("G5: scaling maps the geometric box from one box to another", () => {
   for (let i = 0; i < 2000; i++) {
     const item = randomPlaced(random);
     const from = shapeBox(item);
+    const width = between(random, 1, 2000);
+    // A bent line keeps its bend relative to its chord, which is exact only when both sides scale alike.
+    const bent = (item.type === "line" || item.type === "arrow") && item.bend !== 0 && from.width > 0;
     const to = {
       x: between(random, -1e4, 1e4),
       y: between(random, -1e4, 1e4),
-      width: between(random, 1, 2000),
-      height: between(random, 1, 2000),
+      width,
+      height: bent ? (width * from.height) / from.width : between(random, 1, 2000),
     };
     const scaled = shapeBox(scaleItem(item, from, to));
     if (item.type === "text") {

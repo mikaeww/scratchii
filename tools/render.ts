@@ -326,6 +326,40 @@ async function templates(page: Page): Promise<void> {
   await page.mouse.click(1100, 700);
 }
 
+function arc(from: Point, to: Point, bend: number, count = 24): Point[] {
+  const [dx, dy] = [to[0] - from[0], to[1] - from[1]];
+  const control: Point = [(from[0] + to[0]) / 2 - 2 * dy * bend, (from[1] + to[1]) / 2 + 2 * dx * bend];
+  return Array.from({ length: count + 1 }, (_, i) => {
+    const t = i / count;
+    const [u, v, w] = [(1 - t) * (1 - t), 2 * (1 - t) * t, t * t];
+    return [u * from[0] + v * control[0] + w * to[0], u * from[1] + v * control[1] + w * to[1]] as const;
+  });
+}
+
+// Bent arrows with the pen, held still: one in one stroke, one with its head as a second stroke; a bent line;
+// then a straight arrow from the tool, bent with its middle handle.
+async function curves(page: Page): Promise<void> {
+  await tool(page, "p");
+  const oneStroke = arc([220, 420], [460, 260], 0.3);
+  await stroke(page, [...oneStroke, [432, 252], [460, 260], [440, 284]], 700);
+  await stroke(page, arc([560, 420], [800, 260], -0.3));
+  await stroke(
+    page,
+    [
+      [772, 254],
+      [800, 260],
+      [784, 286],
+    ],
+    700,
+  );
+  await stroke(page, arc([900, 420], [1140, 300], 0.25), 700);
+  await tool(page, "a");
+  await drag(page, [300, 620], [800, 620]);
+  await tool(page, "v");
+  await page.mouse.click(550, 620);
+  await drag(page, [550, 620], [550, 520]);
+}
+
 // Device preferences some scenes start with (see src/storage/preferences.ts).
 const PREFERENCES: Readonly<Record<string, object>> = {
   german: { language: "de", paper: "dots" },
@@ -346,6 +380,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   connectors,
   diagrams,
   templates,
+  curves,
   squares: board,
   palette: async (page) => {
     await page.keyboard.press("Control+k");

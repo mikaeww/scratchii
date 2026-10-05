@@ -62,6 +62,7 @@ export function buildDiagram(
       ],
       label: edge.label,
       ends: [nodes.get(edge.from)?.id ?? null, nodes.get(edge.to)?.id ?? null],
+      bend: 0,
     });
   });
   return [...nodes.values(), ...edges];

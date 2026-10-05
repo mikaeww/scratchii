@@ -3,6 +3,7 @@ import type { Vec } from "../editor/viewport.ts";
 import type { Item } from "../model/item.ts";
 import { shapeBox } from "./bounds.ts";
 import { contains, grow, type Box } from "./box.ts";
+import { linePoints } from "./outline.ts";
 import { insidePolygon, polygonCorners } from "./polygon.ts";
 import { inkReach } from "./widths.ts";
 
@@ -51,9 +52,10 @@ export function hitItem(item: Item, point: Vec, tolerance: number): boolean {
   const reach = inkReach(item) + tolerance;
   switch (item.type) {
     case "stroke":
+      return nearPolyline(point, [item.x, item.y], item.points, reach);
     case "line":
     case "arrow":
-      return nearPolyline(point, [item.x, item.y], item.points, reach);
+      return nearPolyline(point, [item.x, item.y], linePoints(item), reach);
     case "rect":
     case "ellipse": {
       const box = shapeBox(item);

@@ -1,5 +1,6 @@
 // Generated hand-like strokes for the recogniser: jitter, wobble, overshoot and gaps like a quick mouse or pen
 // stroke. A model of a hand, not a recording; see docs/verification/recognize.md.
+import { controlPoint, curvePoints } from "../src/geometry/outline.ts";
 import { between, pick, type Random } from "./random.ts";
 
 export type Point = readonly [number, number];
@@ -9,6 +10,7 @@ export interface Sample {
   readonly box?: { x: number; y: number; width: number; height: number };
   readonly ends?: readonly [Point, Point];
   readonly corners?: readonly Point[];
+  readonly bend?: number;
 }
 
 function jitter(random: Random, points: Point[], amount: number): Point[] {
@@ -211,6 +213,53 @@ export function baseTriangle(random: Random): Sample {
     [x + base * between(random, 0.45, 0.55), y - base * between(random, 0.6, 1.1)],
   ];
   return { points: jitter(random, closedPath(random, corners, 20), base * 0.006), corners };
+}
+
+// The wings of a head at `tip`, pointing along `angle`, drawn out and back like a hand does.
+function headWings(random: Random, tip: Point, angle: number, size: number): Point[] {
+  const wing = (side: number): Point => [
+    tip[0] + Math.cos(angle + Math.PI + side * 0.5) * size,
+    tip[1] + Math.sin(angle + Math.PI + side * 0.5) * size,
+  ];
+  return [...segment(tip, wing(1), 8), ...segment(wing(1), tip, 8), ...segment(tip, wing(-1), 8), wing(-1)];
+}
+
+// A line with one bend between 0.12 and 0.5 chord lengths, either way; with a head at its end when `pointed`.
+export function curved(random: Random, pointed: boolean): Sample {
+  const length = size(random);
+  const angle = random() * Math.PI * 2;
+  const from: Point = spot(random);
+  const to: Point = [from[0] + Math.cos(angle) * length, from[1] + Math.sin(angle) * length];
+  const bend = between(random, 0.12, 0.5) * (random() < 0.5 ? -1 : 1);
+  const curve = curvePoints(from, to, bend, 40);
+  const [cx, cy] = controlPoint(from, to, bend);
+  const points = pointed
+    ? [...curve, ...headWings(random, to, Math.atan2(to[1] - cy, to[0] - cx), length * 0.2)]
+    : curve;
+  return { points: jitter(random, points, length * 0.005), ends: [from, to], bend };
+}
+
+// An arrow in two strokes: the shaft (straight or bent) and, separately, the head as a "V" at its end.
+export function twoStrokeArrow(random: Random): Sample & { readonly head: Point[] } {
+  const shaft = random() < 0.5 ? line(random) : curved(random, false);
+  const [from, to] = shaft.ends ?? [
+    [0, 0],
+    [1, 1],
+  ];
+  const before = shaft.points.at(-4) ?? from;
+  const angle = Math.atan2(to[1] - before[1], to[0] - before[0]);
+  const size = Math.hypot(to[0] - from[0], to[1] - from[1]) * between(random, 0.12, 0.3);
+  const opening = between(random, 0.35, 0.8);
+  const wing = (side: number): Point => [
+    to[0] + Math.cos(angle + Math.PI + side * opening) * size,
+    to[1] + Math.sin(angle + Math.PI + side * opening) * size,
+  ];
+  const head = jitter(
+    random,
+    [...segment(wing(1), to, 10), ...segment(to, wing(-1), 10), wing(-1)],
+    size * 0.02,
+  );
+  return { ...shaft, head };
 }
 
 const NOT_SHAPES = {

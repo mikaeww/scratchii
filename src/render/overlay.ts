@@ -1,6 +1,14 @@
 // Draws the selection frame, its handles and the marquee in screen space, above the scene.
 import type { Editor } from "../editor/editor.ts";
-import { HANDLE_SIZE, HANDLES, frameOf, handlePoint, selectionBox } from "../editor/selection.ts";
+import {
+  HANDLE_SIZE,
+  HANDLES,
+  bendHandle,
+  bendable,
+  frameOf,
+  handlePoint,
+  selectionBox,
+} from "../editor/selection.ts";
 import type { Box } from "../geometry/box.ts";
 import type { Ink } from "./ink.ts";
 
@@ -31,7 +39,8 @@ export function drawOverlay(
     return;
   }
   const live = new Map(editor.scene().map((item) => [item.id, item]));
-  const world = selectionBox([...editor.selection].flatMap((id) => live.get(id) ?? []));
+  const selected = [...editor.selection].flatMap((id) => live.get(id) ?? []);
+  const world = selectionBox(selected);
   if (world === null) return;
   const frame = frameOf(world, editor.view);
   dashed(context, frame);
@@ -41,4 +50,12 @@ export function drawOverlay(
     context.fillRect(x - HANDLE_SIZE / 2, y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
     context.strokeRect(x - HANDLE_SIZE / 2, y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
   }
+  const line = bendable(selected);
+  if (line === null) return;
+  // Round, unlike the square corner handles: it bends instead of resizing.
+  const [x, y] = bendHandle(line, editor.view);
+  context.beginPath();
+  context.arc(x, y, HANDLE_SIZE / 2 + 1, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
 }

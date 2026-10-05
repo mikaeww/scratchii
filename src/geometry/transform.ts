@@ -2,6 +2,7 @@
 import type { Item } from "../model/item.ts";
 import type { Box } from "./box.ts";
 import { shapeBox } from "./bounds.ts";
+import { bendThrough, curveMiddle } from "./outline.ts";
 
 export function moveItem<T extends Item>(item: T, dx: number, dy: number): T {
   if (item.type === "mark") return item;
@@ -22,15 +23,12 @@ export function scaleItem<T extends Item>(item: T, from: Box, to: Box): T {
     case "line":
     case "arrow": {
       const [[ax, ay], [bx, by]] = item.points;
-      return {
-        ...item,
-        x,
-        y,
-        points: [
-          [ax * sx, ay * sy],
-          [bx * sx, by * sy],
-        ],
-      };
+      const [a, b] = [[ax * sx, ay * sy] as const, [bx * sx, by * sy] as const];
+      // The curve's middle moves with the scale; the bend that runs through it is exact for even scaling and
+      // close for uneven scaling, where a true quadratic would lean to one side.
+      const [mx, my] = curveMiddle(item.points[0], item.points[1], item.bend);
+      const bend = item.bend === 0 ? 0 : bendThrough(a, b, [mx * sx, my * sy]);
+      return { ...item, x, y, points: [a, b], bend };
     }
     case "text": {
       const scale = Math.min(sx, sy);

@@ -105,6 +105,7 @@ function arrowBetween(a: Item | null, b: Item | null, random: Random): LineItem 
     ],
     label: "",
     ends: [a?.id ?? null, b?.id ?? null],
+    bend: 0,
   });
 }
 

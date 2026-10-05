@@ -54,7 +54,7 @@ export function shapeItem(style: Style, kind: ShapeKind, start: Vec, end: Vec): 
       [end[0] - start[0], end[1] - start[1]],
     ];
     const line = { type: kind, x: start[0], y: start[1], color, size, points, label: "" } as const;
-    return createItem<LineItem>({ ...line, ends: [null, null] });
+    return createItem<LineItem>({ ...line, ends: [null, null], bend: 0 });
   }
   return createItem<ShapeItem>({ type: kind, ...boxFromPoints(start, end), color, size, fill, label: "" });
 }

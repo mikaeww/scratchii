@@ -1,5 +1,6 @@
 // Typing a label (ADR 0007): where the field sits over a shape or at the middle of a line, and the item it
 // leaves behind. Not here: the field itself (text-editor.ts) or drawing labels (src/render/items/labels.ts).
+import { curveMiddle } from "../../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE } from "../../geometry/widths.ts";
 import { reviseItem, type LineItem, type PolygonItem, type ShapeItem } from "../../model/item.ts";
 import { wrapText } from "../../render/measure.ts";
@@ -21,10 +22,11 @@ export function labelField(
   const fontSize = NOTE_FONT_SIZE[item.size];
   const lineHeight = fontSize * LINE_HEIGHT;
   if ("points" in item) {
-    const [[ax, ay], [bx, by]] = item.points;
+    const [a, b] = item.points;
+    const middle = curveMiddle(a, b, item.bend);
     const lines = wrapText(value || " ", fontSize, LINE_LABEL_WIDTH).length;
     const height = lines * lineHeight;
-    const [mx, my] = [item.x + (ax + bx) / 2, item.y + (ay + by) / 2];
+    const [mx, my] = [item.x + middle[0], item.y + middle[1]];
     return { x: mx - LINE_LABEL_WIDTH / 2, y: my - height / 2, width: LINE_LABEL_WIDTH, height, fontSize };
   }
   const width = Math.max(fontSize, item.width - 2 * INSET);

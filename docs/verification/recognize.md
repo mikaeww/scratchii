@@ -8,7 +8,7 @@ mark on that line).
 
 | # | Claim | Method | Oracle |
 |---|---|---|---|
-| R1 | At least 95 % of generated hand-like strokes of each class (line, arrow, box, ellipse, triangle, diamond, one-stroke star) are classified as that class (triangles, diamonds and stars as polygons) | Property test, 500 strokes per class with jitter, wobble, overshoot and gaps | The generator's class |
+| R1 | At least 95 % of generated hand-like strokes of each class (line, arrow, box, ellipse, triangle, diamond, one-stroke star, bent line, bent arrow) are classified as that class (triangles, diamonds and stars as polygons; bent lines and arrows with their bend within 0.06) | Property test, 500 strokes per class with jitter, wobble, overshoot and gaps | The generator's class |
 | R2 | At most 5 % of generated non-shapes (scribbles, waves, spirals, zigzags, letters S, m, z) are classified as any shape | Property test, 500 strokes per kind | The generator: none of them is a shape |
 | R3 | For correctly classified boxes, ellipses, diamonds and stars, the result box is within 10 % of the generating box on each side (relative to its size); line and arrow ends are within 10 % of the length; a triangle has exactly the generating corners, each within 10 % of the diagonal | Same corpus as R1 | The generator's box, ends and corners |
 | R4 | A horizontal marker stroke inside the band of line k of a text, with at least half of it over the line, becomes a mark on that text with lines [k, k] (or [first, last] when it spans several lines) | Property test, 1000 random texts and strokes | Construction |
@@ -17,6 +17,7 @@ mark on that line).
 | R7 | A pen stroke that snapped to a shape during a pause becomes a freehand stroke again when the pen moves on, and keeps every point drawn before and after the pause | Example test with mocked timers (`tests/editor.test.ts`): a straight stroke, a pause, then a turn | The points fed to the pen |
 | R8 | Boxes and ellipses with a side ratio ≥ 0.95 come back square, ≤ 0.75 never; lines drawn within 2° of a 45° step come back exactly on it, lines 8° or more off never | Property test, 500 boxes, ellipses and lines (`tests/recognize.test.ts`) | The generator's box and angle |
 | R9 | Polygons come back straightened: boxes leaning up to 8° with corners off by up to 4 % become level boxes; boxes leaning 15° to 30° become four corners with exact right angles; triangles on a base leaning up to 6° get an exactly level base | Property test, 500 strokes per case (`tests/recognize.test.ts`), ≥ 95 % each, every recognised one exact | The generator's lean and corners |
+| R10 | A head drawn as its own stroke, a "V" whose tip sits on an end of the stroke drawn just before and points on along it, joins that stroke into one arrow with the shaft's bend; a shaft that does not reach the head, a head pointing back, and non-shapes taken as heads join nothing | Property test, 500 two-stroke arrows (straight and bent shafts) plus 700 non-shapes (`tests/recognize.test.ts`) | The generator's ends and bend |
 
 ## Corpus
 
@@ -45,6 +46,9 @@ R1 ≥ 95 % per class, R2 ≤ 5 % per kind, R3 100 % of correctly classified str
 | R8 | 2026-10-05 | passes; fails as expected with circle snapping or line levelling switched off |
 | Real app | 2026-10-05 | headless (`node tools/render.ts OUT shapes`): a triangle, a narrow loop, a diamond, a one-stroke star and a tilted box held still for 700 ms snapped to triangle, ellipse, diamond, star and tilted polygon; a wave without hold stayed a stroke |
 | R9 | 2026-10-05 | level 500, steep 500, triangle 500 of 500; fails with straightening switched off. First run: a box leaning 37° came back as a diamond; the diamond test now wants its corners within 8 % (was 12 %) of the box edge middles, so boxes up to about 30° stay boxes |
+| R1 | 2026-10-05 | bent line 500/500, bent arrow 489/500, all other classes unchanged; R2 unchanged |
+| R10 | 2026-10-05 | 500 / 500 joined with ends within 10 % and bend within 0.08; 0 / 700 non-shapes taken for heads. First version of the test called a half shaft ending at the tip a wrong join; it is a right one, the test now uses the half that does not reach the head and a mirrored head |
+| Real app | 2026-10-05 | headless (`node tools/render.ts OUT curves`): a bent arrow in one stroke and one with its head as a second stroke, both held still, became bent arrows; a held arc became a bent line; a straight arrow from the tool bent with its middle handle |
 
 ## Known gaps
 
@@ -52,5 +56,7 @@ R1 ≥ 95 % per class, R2 ≤ 5 % per kind, R3 100 % of correctly classified str
   four-corner polygon with right angles; one leaning more than about 30° with corners near its box edge middles
   becomes a diamond. A tilted ellipse stays an axis-aligned ellipse or no shape.
 - Polygons with seven to nine corners, and outline stars that do not alternate clearly, stay strokes.
-- Arrows must be drawn in one stroke (shaft, then the head). Two-stroke arrows stay strokes.
+- Arrows in two strokes join only when the head is drawn right after the shaft; a head drawn later or a shaft in
+  several strokes stays freehand.
+- One bend only: an S-shaped arrow stays a stroke.
 - No real-stroke corpus yet (see above).

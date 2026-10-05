@@ -92,6 +92,9 @@ export interface LineItem extends ItemBase {
   readonly label: string;
   // The items the start and end are attached to; the editor keeps the points on them (ADR 0007).
   readonly ends: readonly [start: string | null, end: string | null];
+  // How far the middle of the line bows out from the straight chord, in chord lengths, to the left of the
+  // direction from start to end; 0 is straight (src/geometry/outline.ts).
+  readonly bend: number;
 }
 
 // Width and height are measured when the text is edited, so geometry never needs the DOM.

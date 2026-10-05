@@ -190,6 +190,7 @@ function line(random: Random, type: LineItem["type"]): LineItem {
     label: random() < 0.5 ? "" : "nein",
     // Ids that need not exist: validation only checks the shape of the field, rerouting drops missing ones.
     ends: [random() < 0.3 ? crypto.randomUUID() : null, null],
+    bend: random() < 0.5 ? 0 : between(random, -0.8, 0.8),
   });
 }
 

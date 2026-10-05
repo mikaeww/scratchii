@@ -17,11 +17,12 @@ be chosen in the settings.
 - A pen that follows pen pressure and feels like a felt marker
 - Boxes, ellipses, triangles, diamonds, stars, lines, arrows, text, sticky notes and pictures
 - Hold the pen still at the end of a scribble and it becomes a clean box, circle or ellipse, triangle, diamond,
-  star, line or arrow; nearly round, square or level shapes snap to round, square and level
+  star, line or arrow, straight or bent; a head drawn after its shaft joins it into one arrow; nearly round,
+  square or level shapes snap to round, square and level
 - Type `=` after maths in a text or note and the answer appears: sums with powers, roots and functions,
   `0x`/`0b` numbers, `255 in hex`, and IPv4 subnets (`192.168.1.0/26 =`)
 - Labels in boxes, ellipses, polygons and on arrows (double-click); arrows drawn from or to a shape stay
-  attached and follow it
+  attached and follow it; arrows and lines bend with the round handle at their middle
 - Diagrams from Mermaid-style flowchart text (`A[Antrag] --> B{Vollständig?}`), laid out in layers with
   attached, labelled arrows; building blocks for an administrative procedure, a network, an ER sketch and a
   UML class

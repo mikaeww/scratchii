@@ -243,8 +243,8 @@ const OPTIONAL: Partial<Record<ItemType, readonly string[]>> = {
   rect: ["label"],
   ellipse: ["label"],
   polygon: ["label"],
-  line: ["label", "ends"],
-  arrow: ["label", "ends"],
+  line: ["label", "ends", "bend"],
+  arrow: ["label", "ends", "bend"],
 };
 
 function optionalLabel(value: unknown, path: string): string {
@@ -260,12 +260,24 @@ function lineEnds(value: unknown, path: string): LineItem["ends"] {
   return [start, finish];
 }
 
+// More than two chord lengths would draw a loop far off the line; nothing in the app makes one.
+const MAX_BEND = 2;
+
+function lineBend(value: unknown, path: string): number {
+  if (value === undefined) return 0;
+  const bend = finite(value, path);
+  if (Math.abs(bend) > MAX_BEND)
+    throw new ValidationError(path, `expected a bend between -${MAX_BEND} and ${MAX_BEND}`);
+  return bend;
+}
+
 function lineFields(type: LineItem["type"], fields: Fields, path: string): Omit<LineItem, keyof ItemBase> {
   return {
     type,
     points: linePoints(fields.points, `${path}.points`),
     label: optionalLabel(fields.label, `${path}.label`),
     ends: lineEnds(fields.ends, `${path}.ends`),
+    bend: lineBend(fields.bend, `${path}.bend`),
   };
 }
 

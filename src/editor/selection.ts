@@ -1,7 +1,9 @@
-// The box around the selected items and its corner handles. Shared by the select tool and the overlay.
+// The box around the selected items, its corner handles, and the bend handle of a single selected line.
+// Shared by the select tool and the overlay.
 import { boundsOf, shapeBox } from "../geometry/bounds.ts";
 import { boxFromPoints, unite, type Box } from "../geometry/box.ts";
-import type { Item } from "../model/item.ts";
+import { curveMiddle } from "../geometry/outline.ts";
+import type { Item, LineItem } from "../model/item.ts";
 import { worldToScreen, type Vec, type Viewport } from "./viewport.ts";
 
 export type Handle = "nw" | "ne" | "sw" | "se";
@@ -66,4 +68,21 @@ export function resizeBox(box: Box, handle: Handle, world: Vec, keepAspect: bool
   const dx = Math.sign(world[0] - fixed[0] || 1) * box.width * scale;
   const dy = Math.sign(world[1] - fixed[1] || 1) * box.height * scale;
   return boxFromPoints(fixed, [fixed[0] + dx, fixed[1] + dy]);
+}
+
+// One line or arrow alone gets a handle at its middle that bends it.
+export function bendable(items: readonly Item[]): LineItem | null {
+  const [only, ...rest] = items;
+  return rest.length === 0 && (only?.type === "line" || only?.type === "arrow") ? only : null;
+}
+
+export function bendHandle(line: LineItem, view: Viewport): Vec {
+  const [a, b] = line.points;
+  const [mx, my] = curveMiddle(a, b, line.bend);
+  return worldToScreen(view, [line.x + mx, line.y + my]);
+}
+
+export function onBendHandle(line: LineItem, view: Viewport, screen: Vec): boolean {
+  const [x, y] = bendHandle(line, view);
+  return Math.hypot(screen[0] - x, screen[1] - y) <= HANDLE_GRAB;
 }

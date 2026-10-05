@@ -74,6 +74,7 @@ function rule(from: readonly [number, number], to: readonly [number, number], st
     ],
     label: "",
     ends: [null, null],
+    bend: 0,
   });
 }
 

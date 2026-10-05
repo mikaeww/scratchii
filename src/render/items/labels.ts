@@ -1,5 +1,6 @@
 // Draw operations for labels (ADR 0007): centred and wrapped inside a box, ellipse or polygon; on a paper
 // patch at the middle of a line or arrow, so the line does not run through the words.
+import { curveMiddle } from "../../geometry/outline.ts";
 import { LINE_HEIGHT, NOTE_FONT_SIZE } from "../../geometry/widths.ts";
 import type { LineItem, PolygonItem, ShapeItem } from "../../model/item.ts";
 import { lineWidth, wrapText } from "../measure.ts";
@@ -34,8 +35,8 @@ export function lineLabelOps(item: LineItem): DrawOp[] {
   const fontSize = NOTE_FONT_SIZE[item.size];
   const lineHeight = fontSize * LINE_HEIGHT;
   const lines = wrapText(item.label, fontSize, LINE_LABEL_WIDTH);
-  const [[ax, ay], [bx, by]] = item.points;
-  const [mx, my] = [(ax + bx) / 2, (ay + by) / 2];
+  const [a, b] = item.points;
+  const [mx, my] = curveMiddle(a, b, item.bend);
   const width = Math.max(...lines.map((line) => lineWidth(line, fontSize))) + 2 * PATCH;
   const height = lines.length * lineHeight + PATCH;
   const [left, top] = [mx - width / 2, my - height / 2];
