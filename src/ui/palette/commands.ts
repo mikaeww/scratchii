@@ -4,6 +4,8 @@ import type { Editor, ToolName } from "../../editor/editor.ts";
 import type { Vec } from "../../editor/viewport.ts";
 import { createItem, type ChartItem, type GraphItem } from "../../model/item.ts";
 import { MAX_FUNCTIONS } from "../../model/validate.ts";
+import { BUILDING_BLOCKS, DIAGRAM_STARTER } from "../../diagram/blocks.ts";
+import { diagramRequest, placeDiagram } from "../editing/diagrams.ts";
 import { placeTable, tableSize } from "../editing/tables.ts";
 import { chartRequest } from "../menus/item-text.ts";
 import type { TextRequest } from "../menus/text-dialog.ts";
@@ -121,6 +123,45 @@ function tableCommand({ editor, centre }: PaletteContext): Command {
   };
 }
 
+const BLOCK_WORDS: Readonly<Record<keyof typeof BUILDING_BLOCKS, readonly string[]>> = {
+  procedure: ["baustein verwaltungsablauf", "ablauf", "prozess", "procedure", "workflow", "antrag"],
+  network: ["baustein netzwerk", "network", "router", "switch", "topologie"],
+  er: ["baustein er-skizze", "entity", "datenbank", "database", "beziehungen"],
+};
+
+function diagramCommands({ editor, centre, openText }: PaletteContext): Command[] {
+  const blocks = (Object.keys(BUILDING_BLOCKS) as (keyof typeof BUILDING_BLOCKS)[]).map((block) => ({
+    id: `block.${block}`,
+    label: text(`palette.block.${block}`),
+    words: BLOCK_WORDS[block],
+    run: () => {
+      placeDiagram(editor, BUILDING_BLOCKS[block], centre());
+    },
+  }));
+  const uml: Command = {
+    id: "block.uml",
+    label: text("palette.block.uml"),
+    words: ["baustein uml-klasse", "uml", "klasse", "class", "klassendiagramm"],
+    run: () => {
+      placeTable(editor, [["Kunde"], ["- name: String\n- id: int"], ["+ bestellen(): void"]], centre());
+    },
+  };
+  const fromText: Command = {
+    id: "insert.diagram",
+    label: text("palette.diagram"),
+    words: ["diagramm aus text", "flussdiagramm", "flowchart", "mermaid", "diagram"],
+    run: () => {
+      openText(diagramRequest(editor, centre, DIAGRAM_STARTER));
+    },
+  };
+  return [fromText, ...blocks, uml];
+}
+
 export function paletteCommands(context: PaletteContext): Command[] {
-  return [...toolCommands(context), tableCommand(context), ...graphCommands(context)];
+  return [
+    ...toolCommands(context),
+    tableCommand(context),
+    ...graphCommands(context),
+    ...diagramCommands(context),
+  ];
 }

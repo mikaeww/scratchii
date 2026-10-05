@@ -22,6 +22,9 @@ be chosen in the settings.
   `0x`/`0b` numbers, `255 in hex`, and IPv4 subnets (`192.168.1.0/26 =`)
 - Labels in boxes, ellipses, polygons and on arrows (double-click); arrows drawn from or to a shape stay
   attached and follow it
+- Diagrams from Mermaid-style flowchart text (`A[Antrag] --> B{Vollständig?}`), laid out in layers with
+  attached, labelled arrows; building blocks for an administrative procedure, a network, an ER sketch and a
+  UML class
 - Tables (`table 3x4` in the palette, or paste cells from a spreadsheet): Tab and Enter move between cells,
   columns grow to their longest word, right-click for rows, columns and a chart of the numbers
 - Function graphs (`graph sin(x); x^2` in the palette) and bar or line charts, edited as plain text with a

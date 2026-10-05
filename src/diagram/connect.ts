@@ -3,7 +3,7 @@
 // (src/editor/editor.ts).
 import { shapeBox } from "../geometry/bounds.ts";
 import { contains, grow, type Box } from "../geometry/box.ts";
-import { polygonCorners } from "../geometry/polygon.ts";
+import { insidePolygon, polygonCorners } from "../geometry/polygon.ts";
 import { reviseItem, type Item, type LineItem } from "../model/item.ts";
 
 type Point = readonly [number, number];
@@ -50,37 +50,62 @@ function raySegment(from: Point, [dx, dy]: Point, a: Point, b: Point): number | 
   return t >= 0 && u >= 0 && u <= 1 ? t : null;
 }
 
-// How far along the unit direction the item's outline is from its box centre.
-function outlineDistance(item: Item, box: Box, direction: Point): number {
+// How far along the unit direction the item's outline is from `origin`, a point inside the item.
+function outlineDistance(item: Item, box: Box, origin: Point, direction: Point): number {
   const [dx, dy] = direction;
-  const [rx, ry] = [box.width / 2, box.height / 2];
   if (item.type === "ellipse") {
-    const scale = Math.hypot(dx / (rx || 1), dy / (ry || 1));
-    return scale === 0 ? 0 : 1 / scale;
+    const [cx, cy] = centreOf(box);
+    const [rx, ry] = [box.width / 2 || 1, box.height / 2 || 1];
+    const [px, py, qx, qy] = [(origin[0] - cx) / rx, (origin[1] - cy) / ry, dx / rx, dy / ry];
+    const [a, b, c] = [qx * qx + qy * qy, 2 * (px * qx + py * qy), px * px + py * py - 1];
+    return a === 0 ? 0 : (-b + Math.sqrt(Math.max(0, b * b - 4 * a * c))) / (2 * a);
   }
   if (item.type === "polygon") {
     const corners = polygonCorners(item);
     const hits = corners
-      .map((corner, i) =>
-        raySegment(centreOf(box), direction, corner, corners[(i + 1) % corners.length] ?? corner),
-      )
+      .map((corner, i) => raySegment(origin, direction, corner, corners[(i + 1) % corners.length] ?? corner))
       .filter((t): t is number => t !== null);
     if (hits.length > 0) return Math.max(...hits);
   }
-  const tx = dx === 0 ? Infinity : rx / Math.abs(dx);
-  const ty = dy === 0 ? Infinity : ry / Math.abs(dy);
-  return Math.min(tx, ty);
+  const along = (o: number, d: number, low: number, high: number): number =>
+    d > 0 ? (high - o) / d : d < 0 ? (low - o) / d : Infinity;
+  return Math.min(
+    along(origin[0], dx, box.x, box.x + box.width),
+    along(origin[1], dy, box.y, box.y + box.height),
+  );
 }
 
-// The point on the item's outline, pushed out by the gap, on the way from its centre toward `toward`.
-export function attachPoint(item: Item, toward: Point, gap = ATTACH_GAP): Point {
+// A sideways shift stays well inside the item, so the ray still starts within it.
+function inside(box: Box, side: Point): Point {
+  const room = (0.4 * Math.min(box.width, box.height)) / 2;
+  const length = Math.hypot(side[0], side[1]);
+  return length <= room ? side : [(side[0] / length) * room, (side[1] / length) * room];
+}
+
+// The point on the item's outline, pushed out by the gap, on the way from its centre (shifted by `side`)
+// toward `toward`.
+export function attachPoint(item: Item, toward: Point, gap = ATTACH_GAP, side: Point = [0, 0]): Point {
   const box = shapeBox(item);
-  const centre = centreOf(box);
-  const length = Math.hypot(toward[0] - centre[0], toward[1] - centre[1]);
+  const [cx, cy] = centreOf(box);
+  const [sx, sy] = inside(box, side);
+  const shifted: Point = [cx + sx, cy + sy];
+  // Between the points of a star or near a triangle's tip the shifted start can fall outside the shape.
+  const outside = item.type === "polygon" && !insidePolygon(shifted, polygonCorners(item));
+  const origin: Point = outside ? [cx, cy] : shifted;
+  const length = Math.hypot(toward[0] - origin[0], toward[1] - origin[1]);
   const direction: Point =
-    length === 0 ? [1, 0] : [(toward[0] - centre[0]) / length, (toward[1] - centre[1]) / length];
-  const distance = outlineDistance(item, box, direction) + gap;
-  return [centre[0] + direction[0] * distance, centre[1] + direction[1] * distance];
+    length === 0 ? [1, 0] : [(toward[0] - origin[0]) / length, (toward[1] - origin[1]) / length];
+  const distance = outlineDistance(item, box, origin, direction) + gap;
+  return [origin[0] + direction[0] * distance, origin[1] + direction[1] * distance];
+}
+
+function sideways(a: Item | null, b: Item | null, offset: number): Point {
+  if (a === null || b === null || offset === 0) return [0, 0];
+  // Ordered by id, so the line from a to b and the one back from b to a agree on which side is which.
+  const [first, second] = a.id < b.id ? [a, b] : [b, a];
+  const [p, q] = [centreOf(shapeBox(first)), centreOf(shapeBox(second))];
+  const length = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+  return [(-(q[1] - p[1]) / length) * offset, ((q[0] - p[0]) / length) * offset];
 }
 
 function worldPoints(line: LineItem): [Point, Point] {
@@ -92,10 +117,14 @@ function worldPoints(line: LineItem): [Point, Point] {
 }
 
 const SAME = 1e-9;
+// World units between lines that join the same two items, so a way there and a way back do not overlap.
+const PARALLEL_GAP = 36;
 
 // The line with its attached ends back on their items, or null when nothing changes. A missing or deleted
 // target drops that attachment and keeps the point.
-export function rerouted(line: LineItem, byId: ReadonlyMap<string, Item>): LineItem | null {
+// `offset` shifts both aims sideways (perpendicular to the line between the two items, the same side for both
+// directions), so parallel lines land beside each other and their ends still sit on the outlines.
+export function rerouted(line: LineItem, byId: ReadonlyMap<string, Item>, offset = 0): LineItem | null {
   if (line.ends[0] === null && line.ends[1] === null) return null;
   const targets = line.ends.map((id) => {
     const item = id === null ? undefined : byId.get(id);
@@ -103,10 +132,14 @@ export function rerouted(line: LineItem, byId: ReadonlyMap<string, Item>): LineI
   });
   const [start, end] = worldPoints(line);
   const [a, b] = targets;
-  const aim = (target: Item | null, own: Point): Point =>
-    target === null ? own : centreOf(shapeBox(target));
-  const from = a === null || a === undefined ? start : attachPoint(a, aim(b ?? null, end));
-  const to = b === null || b === undefined ? end : attachPoint(b, aim(a ?? null, start));
+  const side = sideways(a ?? null, b ?? null, offset);
+  const aim = (target: Item | null, own: Point): Point => {
+    if (target === null) return own;
+    const centre = centreOf(shapeBox(target));
+    return [centre[0] + side[0], centre[1] + side[1]];
+  };
+  const from = a === null || a === undefined ? start : attachPoint(a, aim(b ?? null, end), ATTACH_GAP, side);
+  const to = b === null || b === undefined ? end : attachPoint(b, aim(a ?? null, start), ATTACH_GAP, side);
   const ends: LineItem["ends"] = [a ? line.ends[0] : null, b ? line.ends[1] : null];
   const moved = [from, to].some((p, i) => {
     const old = i === 0 ? start : end;
@@ -126,12 +159,26 @@ export function rerouted(line: LineItem, byId: ReadonlyMap<string, Item>): LineI
 }
 
 // Every attached line that has to follow, given the scene after a change. Unchanged lines are left out.
+function pairKey(line: LineItem): string | null {
+  const [a, b] = line.ends;
+  return a === null || b === null ? null : [a, b].sort().join(" ");
+}
+
 export function reroute(scene: readonly Item[], revise: boolean): LineItem[] {
   const byId = new Map(scene.map((item) => [item.id, item]));
+  const lines = scene.filter(
+    (item): item is LineItem => (item.type === "line" || item.type === "arrow") && !item.deleted,
+  );
+  const pairs = new Map<string, LineItem[]>();
+  for (const line of lines) {
+    const key = pairKey(line);
+    if (key !== null) pairs.set(key, [...(pairs.get(key) ?? []), line]);
+  }
   const out: LineItem[] = [];
-  for (const item of scene) {
-    if ((item.type !== "line" && item.type !== "arrow") || item.deleted) continue;
-    const next = rerouted(item, byId);
+  for (const line of lines) {
+    const group = pairs.get(pairKey(line) ?? "") ?? [line];
+    const offset = (group.indexOf(line) - (group.length - 1) / 2) * PARALLEL_GAP;
+    const next = rerouted(line, byId, offset);
     if (next !== null) out.push(revise ? reviseItem(next) : next);
   }
   return out;

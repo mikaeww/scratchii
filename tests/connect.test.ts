@@ -66,6 +66,32 @@ function offOutline(item: Item, point: readonly [number, number]): number {
   );
 }
 
+// Shortest distance from the point to the item's outline, sampled finely.
+function nearOutline(item: Item, point: readonly [number, number]): number {
+  const box = shapeBox(item);
+  if (item.type === "ellipse") {
+    const [cx, cy, rx, ry] = [box.x + box.width / 2, box.y + box.height / 2, box.width / 2, box.height / 2];
+    return Math.min(
+      ...Array.from({ length: 2000 }, (_, k) => {
+        const t = (k / 2000) * Math.PI * 2;
+        return Math.hypot(point[0] - cx - Math.cos(t) * rx, point[1] - cy - Math.sin(t) * ry);
+      }),
+    );
+  }
+  const corners =
+    item.type === "polygon"
+      ? polygonCorners(item)
+      : ([
+          [box.x, box.y],
+          [box.x + box.width, box.y],
+          [box.x + box.width, box.y + box.height],
+          [box.x, box.y + box.height],
+        ] as const);
+  return Math.min(
+    ...corners.map((c, i) => segmentDistance(point, c, corners[(i + 1) % corners.length] ?? c)),
+  );
+}
+
 function arrowBetween(a: Item | null, b: Item | null, random: Random): LineItem {
   return createItem<LineItem>({
     type: "arrow",
@@ -191,4 +217,46 @@ test("K5: items written before labels and ends load with empty ones", () => {
       "item",
     ),
   );
+});
+
+test("K6: two lines between the same two items lie apart, each end still on its outline", () => {
+  const random = seeded(73);
+  for (let i = 0; i < 500; i++) {
+    const [a, b] = [target(random), target(random)];
+    const there = arrowBetween(a, b, random);
+    const back = arrowBetween(b, a, random);
+    const placed = reroute([a, b, there, back], false);
+    const byId = new Map(placed.map((line) => [line.id, line]));
+    const [one, two] = [byId.get(there.id) ?? there, byId.get(back.id) ?? back];
+    const middle = (line: LineItem): [number, number] => {
+      const [[ax, ay], [bx, by]] = line.points;
+      return [line.x + (ax + bx) / 2, line.y + (ay + by) / 2];
+    };
+    const [m1, m2] = [middle(one), middle(two)];
+    const boxA = shapeBox(a);
+    const boxB = shapeBox(b);
+    const centres = Math.hypot(
+      boxA.x + boxA.width / 2 - boxB.x - boxB.width / 2,
+      boxA.y + boxA.height / 2 - boxB.y - boxB.height / 2,
+    );
+    // Overlapping items have no room between them to tell two lines apart.
+    if (centres < Math.max(boxA.width, boxA.height, boxB.width, boxB.height)) continue;
+    assert.ok(Math.hypot(m1[0] - m2[0], m1[1] - m2[1]) > 10, `case ${i}: the two lines overlap`);
+    // Ends start from a point beside the centre, so they meet the outline at a slant: within the gap of it.
+    for (const line of [one, two]) {
+      const [[ax, ay], [bx, by]] = line.points;
+      const ends = [
+        [line.x + ax, line.y + ay],
+        [line.x + bx, line.y + by],
+      ] as const;
+      line.ends.forEach((id, k) => {
+        const item = id === a.id ? a : b;
+        assert.ok(
+          // 0.1 covers sampling the ellipse at 2000 points; boxes and polygons are exact.
+          nearOutline(item, ends[k] ?? [0, 0]) <= ATTACH_GAP + 0.1,
+          `case ${i}: end ${k} off the outline`,
+        );
+      });
+    }
+  }
 });

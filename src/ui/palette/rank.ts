@@ -31,10 +31,17 @@ function score(query: string, name: string): number {
   return subsequence(query, name) ? 10 : 0;
 }
 
+// Every word of the query starts a word somewhere in the label or the search words, in any order:
+// "baustein netzwerk" finds "Building block: network" through its German search words.
+function allWords(query: string, names: readonly string[]): boolean {
+  const words = names.flatMap((name) => name.split(/[\s:()]+/));
+  return query.split(/\s+/).every((part) => words.some((word) => word.startsWith(part)));
+}
+
 function bestMatch(command: Command, raw: string): Match & { readonly score: number } {
   const query = raw.toLowerCase();
   const names = [command.label, ...command.words].map((name) => name.toLowerCase());
-  let best = { command, argument: "", score: 0 };
+  let best = { command, argument: "", score: allWords(query, names) ? 50 : 0 };
   for (const name of names) {
     if (command.argument !== undefined && query.startsWith(`${name} `)) {
       const candidate = { command, argument: raw.slice(name.length + 1).trim(), score: 100 + name.length };

@@ -11,6 +11,7 @@ changes) and the labels on shapes and lines (ADR 0007).
 | K2 | After any of the targets move or scale, rerouting puts every attached end back on its target's outline (K1) and the end points toward the other end's target centre or point | Property test, 1000 random boards with lines between random items | K1 |
 | K3 | A line whose target is deleted keeps its points and that end becomes unattached; lines without attachments never change | Property test | The input |
 | K4 | Rerouting twice changes nothing the second time | Property test | The first result |
+| K6 | Two lines between the same two items lie apart (their middles more than 10 units apart when the items do not overlap), and each end is within the gap of its item's outline | Property test, 500 pairs | The outline, sampled |
 | K5 | Labels and ends survive validation and files; files without them load with `""` and `[null, null]` | The model and file tests; an example of an old item | ADR 0007 |
 
 ## Corpus
@@ -29,6 +30,7 @@ All claims 100 %.
 | K2, K4 | 2026-10-05 | 1000 / 1000 boards |
 | K3 | 2026-10-05 | 500 / 500 |
 | K5 | 2026-10-05 | old box and arrow load with empty label and no ends; a malformed `ends` is refused. M2 (every leaf of a wrong type is rejected) now puts a number where `null` was, since a string is a valid end id |
+| K6 | 2026-10-05 | 500 / 500. First run: shifting only the aim moved the ends by a unit or two when the items were far apart; the ray now starts beside the centre, and at the centre where that point would leave a star or triangle |
 | Real app | 2026-10-05 | headless (`node tools/render.ts OUT connectors`): an arrow drawn from inside a box to inside a diamond attached to both; after the diamond was dragged away the arrow ran from the box edge to the diamond edge; labels typed with a double-click sat centred in both shapes |
 
 ## Known gaps

@@ -227,7 +227,7 @@ async function graphs(page: Page): Promise<void> {
   await command(page, "graph sin(x); x^2/4 - 3; 1/x");
   await tool(page, "v");
   await drag(page, [640, 400], [380, 400]);
-  await page.mouse.click(1200, 760);
+  await page.mouse.click(1100, 180);
 }
 
 // A table from the palette filled with Tab and Enter, a bar chart from its right-click menu, and a second table
@@ -266,7 +266,7 @@ async function tables(page: Page): Promise<void> {
     );
     document.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data }));
   });
-  await page.mouse.click(1200, 760);
+  await page.mouse.click(1100, 180);
 }
 
 // A box and a diamond joined by an arrow drawn from inside one to inside the other; the diamond is then moved
@@ -289,7 +289,21 @@ async function connectors(page: Page): Promise<void> {
     await page.keyboard.type(label);
     await page.keyboard.press("Escape");
   }
-  await page.mouse.click(1200, 760);
+  await page.mouse.click(1100, 180);
+}
+
+// The flowchart dialog from the palette with its starter text applied, seen zoomed out; then the network
+// building block next to it. The last click lands on empty canvas, away from the zoom reset button.
+async function diagrams(page: Page): Promise<void> {
+  await command(page, "diagramm aus text");
+  await page.keyboard.press("Control+Enter");
+  await page.click('[aria-label="Zoom out"]');
+  await page.click('[aria-label="Zoom out"]');
+  await tool(page, "v");
+  await drag(page, [640, 330], [430, 330]);
+  await command(page, "baustein netzwerk");
+  await drag(page, [640, 400], [880, 640]);
+  await page.mouse.click(1100, 180);
 }
 
 // Device preferences some scenes start with (see src/storage/preferences.ts).
@@ -309,6 +323,7 @@ const SCENES: Readonly<Record<string, (page: Page) => Promise<void>>> = {
   graphs,
   tables,
   connectors,
+  diagrams,
   palette: async (page) => {
     await page.keyboard.press("Control+k");
     await page.keyboard.type("kre");

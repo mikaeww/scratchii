@@ -34,4 +34,7 @@ test("P3: prefixes beat substrings, substrings beat scattered letters, misses ar
   assert.equal(rankCommands("kast", COMMANDS)[0]?.command.id, "rect");
   assert.equal(rankCommands("tbl", COMMANDS)[0]?.command.id, "table");
   assert.deepEqual(rankCommands("zzz", COMMANDS), []);
+  // Several words match word starts in any order, across label and search words.
+  assert.equal(rankCommands("graph funk", COMMANDS)[0]?.command.id, "graph");
+  assert.equal(rankCommands("funk graph", COMMANDS)[0]?.command.id, "graph");
 });
